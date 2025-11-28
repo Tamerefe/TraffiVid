@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TraffiVid - Trafik Güvenliği Senaryo Oyunu</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <!-- Top Navigation Bar -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-content">
+            <div class="nav-left">
+                <div class="nav-logo">
+                    <img src="logo.png" alt="TraffiVid Logo" class="logo-img">
+                </div>
+                <div class="nav-menu">
+                    <a href="#home" data-i18n="nav_home">Ana Sayfa</a>
+                    <div class="nav-dropdown">
+                        <a href="#categories" data-i18n="nav_categories" class="dropdown-trigger">Kategoriler</a>
+                        <div class="dropdown-menu">
+                            <a href="#yaya-guvenlik" class="dropdown-item" data-i18n-category="Yaya Güvenliği">Yaya
+                                Güvenliği</a>
+                            <a href="#kavsak-donusler" class="dropdown-item"
+                                data-i18n-category="Kavşak ve Dönüşler">Kavşak ve Dönüşler</a>
+                            <a href="#hiz-fren" class="dropdown-item" data-i18n-category="Hız ve Fren Mesafesi">Hız ve
+                                Fren Mesafesi</a>
+                            <a href="#dikkat-daginiklik" class="dropdown-item"
+                                data-i18n-category="Dikkat Dağınıklığı">Dikkat Dağınıklığı</a>
+                            <a href="#gece-surus" class="dropdown-item" data-i18n-category="Gece Sürüşü">Gece Sürüşü</a>
+                        </div>
+                    </div>
+                    <a href="#scores" data-i18n="nav_scores">Skorlar</a>
+                </div>
+            </div>
+            <div class="nav-user">
+                <div class="language-toggle">
+                    <label class="switch">
+                        <input type="checkbox" id="langToggle">
+                        <span class="slider">
+                            <span class="slider-text tr">TR</span>
+                            <span class="slider-text en">EN</span>
+                        </span>
+                    </label>
+                </div>
+                <div class="user-profile">
+                    <span class="user-icon">👤</span>
+                    <span class="user-tooltip" data-i18n="guest">Misafir</span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Banner -->
+    <section class="hero" id="home">
+        <div class="hero-content">
+            <div class="hero-left">
+                <h1 data-i18n="hero_title">Trafik Güvenliği Senaryo Oyunu</h1>
+                <p data-i18n="hero_description">5 saniyelik kaza videolarını izle, 15 saniye içinde karar ver, doğru
+                    tercihle yeni senaryoları
+                    kilitten çıkar.</p>
+                <button class="btn-primary" id="startBtn" data-i18n="hero_start_btn">Hemen Başla</button>
+            </div>
+            <div class="hero-right">
+                <div class="featured-card">
+                    <div class="featured-thumbnail">
+                        <img src="https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=600&h=400&fit=crop"
+                            alt="Featured Scenario">
+                        <div class="play-icon">▶</div>
+                    </div>
+                    <div class="featured-info">
+                        <h3>Zebra Çizgisinde Ani Karar</h3>
+                        <div class="featured-meta">
+                            <span class="category-tag">Yaya Güvenliği</span>
+                            <span class="difficulty-badge difficulty-kolay">Kolay</span>
+                        </div>
+                        <button class="btn-secondary" onclick="openScenario('scenario-1')"
+                            data-i18n="go_to_scenario">Senaryoya Git</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Category Rows -->
+    <section class="categories" id="categories">
+        <!-- Yaya Güvenliği -->
+        <div class="category-row">
+            <div class="category-header">
+                <h2>Yaya Güvenliği</h2>
+                <a href="#" class="view-all">Tümünü Gör →</a>
+            </div>
+            <div class="cards-container" id="yaya-guvenlik">
+                <!-- Cards will be populated by JavaScript -->
+            </div>
+        </div>
+
+        <!-- Kavşak ve Dönüşler -->
+        <div class="category-row">
+            <div class="category-header">
+                <h2>Kavşak ve Dönüşler</h2>
+                <a href="#" class="view-all">Tümünü Gör →</a>
+            </div>
+            <div class="cards-container" id="kavsak-donusler">
+                <!-- Cards will be populated by JavaScript -->
+            </div>
+        </div>
+
+        <!-- Hız ve Fren Mesafesi -->
+        <div class="category-row">
+            <div class="category-header">
+                <h2>Hız ve Fren Mesafesi</h2>
+                <a href="#" class="view-all">Tümünü Gör →</a>
+            </div>
+            <div class="cards-container" id="hiz-fren">
+                <!-- Cards will be populated by JavaScript -->
+            </div>
+        </div>
+
+        <!-- Dikkat Dağınıklığı -->
+        <div class="category-row">
+            <div class="category-header">
+                <h2>Dikkat Dağınıklığı</h2>
+                <a href="#" class="view-all">Tümünü Gör →</a>
+            </div>
+            <div class="cards-container" id="dikkat-daginiklik">
+                <!-- Cards will be populated by JavaScript -->
+            </div>
+        </div>
+
+        <!-- Gece Sürüşü -->
+        <div class="category-row">
+            <div class="category-header">
+                <h2>Gece Sürüşü</h2>
+                <a href="#" class="view-all">Tümünü Gör →</a>
+            </div>
+            <div class="cards-container" id="gece-surus">
+                <!-- Cards will be populated by JavaScript -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Scores Section -->
+    <section class="scores-section" id="scores">
+        <div class="scores-content">
+            <h2 data-i18n="my_scores">Skorlarım</h2>
+            <div class="total-score">
+                <div class="score-label" data-i18n="total_score">Toplam Puan</div>
+                <div class="score-value" id="totalScore">0</div>
+            </div>
+            <div class="completed-scenarios">
+                <div class="score-label" data-i18n="completed_scenarios">Tamamlanan Senaryolar</div>
+                <div class="score-value" id="completedCount">0</div>
+            </div>
+            <div id="scoresList" class="scores-list">
+                <!-- Individual scenario scores will be listed here -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Category View All Modal -->
+    <div class="modal" id="categoryModal">
+        <div class="modal-content category-modal-content">
+            <button class="modal-close" id="closeCategoryModal">×</button>
+            <div class="category-modal-header">
+                <h2 id="categoryModalTitle"></h2>
+                <p id="categoryModalCount"></p>
+            </div>
+            <div class="category-modal-grid" id="categoryModalGrid">
+                <!-- All scenarios from category will be shown here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Scenario Detail Modal -->
+    <div class="modal" id="scenarioModal">
+        <div class="modal-content">
+            <button class="modal-close" id="closeModal">×</button>
+
+            <div class="scenario-header">
+                <h2 id="scenarioTitle"></h2>
+                <div class="scenario-meta">
+                    <span class="category-tag" id="scenarioCategory"></span>
+                    <span class="difficulty-badge" id="scenarioDifficulty"></span>
+                    <span class="best-score"><span data-i18n="best_score">En İyi</span>: <span
+                            id="scenarioBestScore">-</span></span>
+                </div>
+            </div>
+
+            <div class="video-container">
+                <video id="scenarioVideo"
+                    poster="https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=1200&h=675&fit=crop">
+                    <source src="" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+
+                <!-- Question Overlay -->
+                <div class="question-overlay" id="questionOverlay">
+                    <div class="timer-container">
+                        <svg class="timer-circle" width="120" height="120">
+                            <circle cx="60" cy="60" r="54" class="timer-bg"></circle>
+                            <circle cx="60" cy="60" r="54" class="timer-progress" id="timerProgress"></circle>
+                        </svg>
+                        <div class="timer-text" id="timerText">15</div>
+                    </div>
+                    <div class="question-content">
+                        <h3 id="questionText"></h3>
+                        <div class="options-container" id="optionsContainer">
+                            <!-- Options will be populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Outcome Overlay -->
+                <div class="outcome-overlay" id="outcomeOverlay">
+                    <div class="outcome-content">
+                        <div class="outcome-icon" id="outcomeIcon"></div>
+                        <h3 id="outcomeTitle"></h3>
+                        <p id="outcomeExplanation"></p>
+                        <div class="outcome-score">
+                            <span id="outcomeScoreText"></span>
+                        </div>
+                        <div class="outcome-actions">
+                            <button class="btn-secondary" id="retryBtn" data-i18n="retry">Tekrar Dene</button>
+                            <button class="btn-primary" id="nextBtn" data-i18n="next_scenario">Sonraki Senaryo</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>
