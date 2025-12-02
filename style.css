@@ -786,18 +786,17 @@ input:checked+.slider:before {
 
 .modal-content {
     background-color: var(--dark-bg);
-    width: 95%;
-    max-width: 1200px;
-    margin: 2rem auto;
-    border-radius: 8px;
+    width: 100%;
+    height: 100vh;
+    margin: 0;
+    border-radius: 0;
     position: relative;
-    padding: 2rem;
+    display: flex;
+    flex-direction: column;
 }
 
 /* Category Modal Specific Styles */
 .category-modal-content {
-    max-width: 1400px;
-    max-height: 90vh;
     overflow-y: auto;
 }
 
@@ -853,7 +852,7 @@ input:checked+.slider:before {
     color: white;
     font-size: 3rem;
     cursor: pointer;
-    z-index: 10;
+    z-index: 100;
     line-height: 1;
     transition: transform 0.3s ease;
 }
@@ -863,12 +862,29 @@ input:checked+.slider:before {
 }
 
 .scenario-header {
-    margin-bottom: 1.5rem;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    padding: 1rem 2rem;
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0.8) 0%, transparent 100%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 2rem;
+    z-index: 10;
+    transform: translateY(-100%);
+    transition: transform 0.3s ease;
+}
+
+.video-container:hover .scenario-header {
+    transform: translateY(0);
 }
 
 .scenario-header h2 {
-    font-size: 2rem;
-    margin-bottom: 1rem;
+    font-size: 1.5rem;
+    margin-bottom: 0;
 }
 
 .scenario-meta {
@@ -886,14 +902,18 @@ input:checked+.slider:before {
 .video-container {
     position: relative;
     background-color: black;
-    border-radius: 8px;
+    border-radius: 0;
     overflow: hidden;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 #scenarioVideo {
     width: 100%;
+    object-fit: contain;
     display: block;
-    max-height: 70vh;
 }
 
 /* ===== QUESTION OVERLAY ===== */
@@ -1145,7 +1165,9 @@ input:checked+.slider:before {
 
     .modal-content {
         padding: 1rem;
-        margin: 1rem;
+        margin: 0;
+        width: 100%;
+        height: 100vh;
     }
 
     .scenario-header h2 {

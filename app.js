@@ -110,8 +110,7 @@ const scenarioTranslations = {
             question: 'Yaya geçidine yaklaşırken bir yaya aniden yola adım attı. Sürücü olarak en güvenli seçenek hangisidir?',
             options: [
                 { text: 'A) Ani fren yapıp yaya geçidinin önünde durmak', explanation: 'Doğru tercih! Trafik kurallarına göre sürücüler, yaya geçidinde veya yakınında bulunan yayalara yol vermek zorundadır. Ani fren yapmak, yayaya çarpmanın önüne geçer.' },
-                { text: 'B) Hız kesmeden devam edip korna çalmak', explanation: 'Riskli tercih! Bu davranış hem trafik kurallarına aykırıdır hem de yayaya çarpma riski taşır. Yaya geçidinde yayanın geçiş hakkı vardır ve sürücü durmalıdır.' },
-                { text: 'C) Şerit değiştirerek yayadan kaçınmak', explanation: 'Riskli tercih! Ani şerit değiştirmek diğer araçlarla çarpışma riskini artırır. Doğru olan yaya geçidinin önünde durmaktır.' }
+                { text: 'B) Önce dur, yaya gelince hızlan', explanation: 'Riskli tercih! Bu davranış hem trafik kurallarına aykırıdır hem de yayaya çarpma riski taşır. Yaya geçidinde yayanın geçiş hakkı vardır ve sürücü durmalıdır.' }
             ]
         },
         en: {
@@ -119,8 +118,7 @@ const scenarioTranslations = {
             question: 'A pedestrian suddenly stepped onto the road while you were approaching a crosswalk. What is the safest option as a driver?',
             options: [
                 { text: 'A) Make an emergency stop before the crosswalk', explanation: 'Correct choice! According to traffic rules, drivers must yield to pedestrians at or near crosswalks. Emergency braking prevents hitting the pedestrian.' },
-                { text: 'B) Continue without slowing down and honk', explanation: 'Risky choice! This behavior violates traffic rules and risks hitting the pedestrian. Pedestrians have the right of way at crosswalks and drivers must stop.' },
-                { text: 'C) Change lanes to avoid the pedestrian', explanation: 'Risky choice! Sudden lane changes increase the risk of collision with other vehicles. The correct action is to stop before the crosswalk.' }
+                { text: 'B) Stop first, then accelerate when pedestrian approaches', explanation: 'Risky choice! This behavior violates traffic rules and risks hitting the pedestrian. Pedestrians have the right of way at crosswalks and drivers must stop.' }
             ]
         }
     }
@@ -138,7 +136,7 @@ const scenarios = [
         difficulty: 'kolay',
         locked: false,
         thumbnail: 'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=600&h=400&fit=crop',
-        videoUrl: '',
+        videoUrl: 'vid/sc-1.mp4',
         question: 'Yaya geçidine yaklaşırken bir yaya aniden yola adım attı. Sürücü olarak en güvenli seçenek hangisidir?',
         options: [
             {
@@ -149,9 +147,10 @@ const scenarios = [
             },
             {
                 id: 'b',
-                text: 'B) Hız kesmeden devam edip korna çalmak',
+                text: 'B) Önce dur, yaya gelince hızlan',
                 correct: false,
-                explanation: 'Riskli tercih! Bu davranış hem trafik kurallarına aykırıdır hem de yayaya çarpma riski taşır. Yaya geçidinde yayanın geçiş hakkı vardır ve sürücü durmalıdır.'
+                explanation: 'Riskli tercih! Bu davranış hem trafik kurallarına aykırıdır hem de yayaya çarpma riski taşır. Yaya geçidinde yayanın geçiş hakkı vardır ve sürücü durmalıdır.',
+                failVideo: 'vid/sc-1-f.mp4'
             }
         ]
     },
@@ -162,21 +161,22 @@ const scenarios = [
         categoryId: 'yaya-guvenlik',
         difficulty: 'kolay',
         locked: true,
-        thumbnail: 'https://images.unsplash.com/photo-1580894894513-541e068a3e2b?w=600&h=400&fit=crop',
-        videoUrl: '',
-        question: 'Okul bölgesinde hız sınırı 30 km/s olan bir yolda sürüyorsunuz. Çocuklar kaldırımda oyun oynuyor. Ne yapmalısınız?',
+        thumbnail: 'https://images.unsplash.com/photo-1501959181532-7d2a3c064642?w=600&h=400&fit=crop',
+        videoUrl: 'vid/sc-2.mp4',
+        question: 'Okul yaya geçidinde dönüş sırasında yayaya yol vermenize rağmen yaya duruyor. Ne yapmalısınız?',
         options: [
             {
                 id: 'a',
-                text: 'A) Hızı azaltmak ve dikkatli ilerlemek',
+                text: 'A) Beklemek ve yayaya işaret vererek geçmesini sağlamak',
                 correct: true,
-                explanation: 'Doğru tercih! Okul bölgelerinde hız sınırına uymak ve ekstra dikkatli olmak çocukların güvenliği için kritik öneme sahiptir.'
+                explanation: 'Doğru tercih! Yaya geçidinde yayaya yol vermek zorunludur. Yaya duraksa bile sabırla beklemek ve geçmesi için nazikçe işaret vermek en güvenli yaklaşımdır.'
             },
             {
                 id: 'b',
-                text: 'B) Hız sınırında gitmek yeterlidir',
+                text: 'B) Korna basıp yaya şeritte olmasına rağmen geçmeye çalışmak',
                 correct: false,
-                explanation: 'Riskli tercih! Hız sınırına uymak önemli olsa da çocukların öngörülemez davranışları nedeniyle daha da yavaşlamak güvenliği artırır.'
+                explanation: 'Riskli tercih! Yaya geçidinde yayanın geçiş hakkı her zaman önceliktir. Aceleci davranmak kazaya yol açabilir ve trafik kurallarına aykırıdır.',
+                failVideo: 'vid/sc-2-f.mp4'
             }
         ]
     },
@@ -267,20 +267,21 @@ const scenarios = [
         difficulty: 'orta',
         locked: false,
         thumbnail: 'https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?w=600&h=400&fit=crop',
-        videoUrl: '',
-        question: 'Yağmurlu havada yolculuk yaparken önünüzdeki araç aniden fren yaptı. Ne yapmalısınız?',
+        videoUrl: 'vid/sc-3.1.mp4',
+        question: 'Yağmurlu havada giderken tali yoldan ana yola bağlanmaya çalışan bir sürücü varsa ne yapmalısınız?',
         options: [
             {
                 id: 'a',
-                text: 'A) Kademeli olarak fren yapmak',
+                text: 'A) Kademeli fren yapıp dikkat etmek',
                 correct: true,
-                explanation: 'Doğru tercih! Yağmurlu havada yol tutuşu azaldığı için kademeli fren yapmak aracın kontrolünü kaybetmemenizi sağlar ve kayma riskini azaltır.'
+                explanation: 'Doğru tercih! Yağmurlu havada yol tutuşu azaldığı için kademeli fren yapmak ve dikkatli olmak aracın kontrolünü korumanızı sağlar. Tali yoldan gelen sürücüye karşı hazırlıklı olmalısınız.'
             },
             {
                 id: 'b',
-                text: 'B) Ani ve sert fren yapmak',
+                text: 'B) Hiçbir şey yapmadan yolumuza devam etmek',
                 correct: false,
-                explanation: 'Riskli tercih! Ani fren yapmak ıslak zeminde tekerlek kilidine ve kaymalara neden olur. Bu durum kazaya yol açabilir.'
+                explanation: 'Riskli tercih! Ana yolda öncelik sizde olsa bile, savunma sürüşü yapmalı ve diğer sürücülerin hata yapabileceğini göz önünde bulundurmalısınız. Yağmurlu havada daha da dikkatli olunmalıdır.',
+                failVideo: 'vid/sc-3.1-f.mp4'
             }
         ]
     },
@@ -962,17 +963,22 @@ function closeModal() {
 function startScenarioSequence() {
     const video = document.getElementById('scenarioVideo');
 
-    // Simulate playing video for 5 seconds
-    // In real implementation, you would use actual video
-    setTimeout(() => {
-        video.pause();
-        showQuestion();
-    }, 5000);
+    // Set video source if available
+    if (currentScenario.videoUrl) {
+        video.src = currentScenario.videoUrl;
+        video.load();
+        video.play();
 
-    // For demo, we'll just show the question after a short delay
-    setTimeout(() => {
-        showQuestion();
-    }, 2000);
+        // When video ends, show question
+        video.onended = () => {
+            showQuestion();
+        };
+    } else {
+        // For demo without video, just show the question after a short delay
+        setTimeout(() => {
+            showQuestion();
+        }, 2000);
+    }
 }
 
 function showQuestion() {
@@ -1029,6 +1035,22 @@ function selectOption(option, timedOut = false) {
     // Hide question overlay
     document.getElementById('questionOverlay').classList.remove('active');
 
+    // If wrong option has a fail video, play it first
+    if (!option.correct && option.failVideo) {
+        const video = document.getElementById('scenarioVideo');
+        video.src = option.failVideo;
+        video.load();
+        video.play();
+
+        video.onended = () => {
+            processOptionResult(option, timedOut);
+        };
+    } else {
+        processOptionResult(option, timedOut);
+    }
+}
+
+function processOptionResult(option, timedOut = false) {
     // Calculate score
     const score = option.correct ? 100 : 0;
 
