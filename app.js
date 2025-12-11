@@ -42,7 +42,7 @@ const translations = {
         'Yaya Güvenliği': 'Yaya Güvenliği',
         'Kavşak ve Dönüşler': 'Kavşak ve Dönüşler',
         'Hız ve Fren Mesafesi': 'Hız ve Fren Mesafesi',
-        'Dikkat Dağınıklığı': 'Dikkat Dağınıklığı',
+        'Kurallar ve Dikkat Dağınıklığı': 'Kurallar ve Dikkat Dağınıklığı',
         'Gece Sürüşü': 'Gece Sürüşü',
 
         // Outcomes
@@ -91,7 +91,7 @@ const translations = {
         'Yaya Güvenliği': 'Pedestrian Safety',
         'Kavşak ve Dönüşler': 'Intersections & Turns',
         'Hız ve Fren Mesafesi': 'Speed & Braking Distance',
-        'Dikkat Dağınıklığı': 'Distracted Driving',
+        'Kurallar ve Dikkat Dağınıklığı': 'Rules & Distracted Driving',
         'Gece Sürüşü': 'Night Driving',
 
         // Outcomes
@@ -119,6 +119,456 @@ const scenarioTranslations = {
             options: [
                 { text: 'A) Make an emergency stop before the crosswalk', explanation: 'Correct choice! According to traffic rules, drivers must yield to pedestrians at or near crosswalks. Emergency braking prevents hitting the pedestrian.' },
                 { text: 'B) Stop first, then accelerate when pedestrian approaches', explanation: 'Risky choice! This behavior violates traffic rules and risks hitting the pedestrian. Pedestrians have the right of way at crosswalks and drivers must stop.' }
+            ]
+        }
+    },
+    'scenario-2': {
+        tr: {
+            title: 'Okul Geçidi Uyarısı',
+            question: 'Okul yaya geçidinde dönüş sırasında yayaya yol vermenize rağmen yaya duruyor. Ne yapmalısınız?',
+            options: [
+                { text: 'A) Beklemek ve yayaya işaret vererek geçmesini sağlamak', explanation: 'Doğru tercih! Yaya geçidinde yayaya yol vermek zorunludur. Yaya duraksa bile sabırla beklemek ve geçmesi için nazikçe işaret vermek en güvenli yaklaşımdır.' },
+                { text: 'B) Korna basıp yaya şeritte olmasına rağmen geçmeye çalışmak', explanation: 'Riskli tercih! Yaya geçidinde yayanın geçiş hakkı her zaman önceliktir. Aceleci davranmak kazaya yol açabilir ve trafik kurallarına aykırıdır.' }
+            ]
+        },
+        en: {
+            title: 'School Crossing Warning',
+            question: 'While turning at a school crosswalk, you yielded to a pedestrian but they are standing still. What should you do?',
+            options: [
+                { text: 'A) Wait patiently and signal the pedestrian to cross', explanation: 'Correct choice! Yielding to pedestrians at crosswalks is mandatory. Even if they hesitate, wait patiently and politely signal them to cross safely.' },
+                { text: 'B) Honk and try to pass despite the pedestrian being on the crossing', explanation: 'Risky choice! Pedestrians always have right of way at crosswalks. Acting hastily can cause accidents and violates traffic rules.' }
+            ]
+        }
+    },
+    'scenario-3': {
+        tr: {
+            title: 'Park Halindeki Araçlar Arasından Çıkan Yaya',
+            question: 'Dar bir sokakta park halindeki araçlar arasından aniden bir yaya çıktı. En doğru hareket nedir?',
+            options: [
+                { text: 'A) Frene basarak durmaya çalışmak', explanation: 'Doğru tercih! Park halindeki araçların olduğu bölgelerde her zaman yaya çıkabileceği ihtimaline karşı hazırlıklı olmalı ve hızınızı ona göre ayarlamalısınız.' },
+                { text: 'B) Direksiyon kırarak kaçınmaya çalışmak', explanation: 'Riskli tercih! Ani direksiyon hareketleri karşı şeride geçmenize veya park halindeki araçlara çarpmanıza neden olabilir.' }
+            ]
+        },
+        en: {
+            title: 'Pedestrian Emerging from Parked Cars',
+            question: 'A pedestrian suddenly emerged from between parked cars on a narrow street. What is the correct action?',
+            options: [
+                { text: 'A) Apply brakes and try to stop', explanation: 'Correct choice! In areas with parked cars, always be prepared for pedestrians and adjust your speed accordingly.' },
+                { text: 'B) Swerve to avoid them', explanation: 'Risky choice! Sudden steering movements can cause you to enter oncoming traffic or hit parked vehicles.' }
+            ]
+        }
+    },
+    'scenario-4': {
+        tr: {
+            title: 'Işıksız Kavşakta Öncelik',
+            question: 'Işıksız bir kavşağa yaklaşıyorsunuz ve sağdan bir araç geliyor. Ne yapmalısınız?',
+            options: [
+                { text: 'A) Sağdan gelen araca yol vermek', explanation: 'Doğru tercih! Türkiye\'de sağdan gelen araç önceliklidir. Bu kuralı bilmek ve uygulamak kaza riskini azaltır.' },
+                { text: 'B) Hızlıca geçmeye çalışmak', explanation: 'Riskli tercih! Öncelik kuralını ihlal etmek ciddi kazalara yol açabilir. Sağdan gelen araca her zaman yol verilmelidir.' }
+            ]
+        },
+        en: {
+            title: 'Priority at Unsignalized Intersection',
+            question: 'You are approaching an unsignalized intersection and a vehicle is coming from the right. What should you do?',
+            options: [
+                { text: 'A) Yield to the vehicle from the right', explanation: 'Correct choice! In Turkey, vehicles from the right have priority. Knowing and following this rule reduces accident risk.' },
+                { text: 'B) Try to pass quickly', explanation: 'Risky choice! Violating priority rules can lead to serious accidents. Always yield to vehicles from the right.' }
+            ]
+        }
+    },
+    'scenario-5': {
+        tr: {
+            title: 'Sola Dönüşte Karşıdan Gelen Araç',
+            question: 'Yeşil ışıkta sola dönmek istiyorsunuz ancak karşıdan düz giden araçlar var. Nasıl hareket etmelisiniz?',
+            options: [
+                { text: 'A) Karşıdan gelen araçların geçmesini beklemek', explanation: 'Doğru tercih! Sola dönerken karşıdan düz gelen veya sağa dönen araçlara yol vermek zorundasınız. Bu kural çarpışmaları önler.' },
+                { text: 'B) Hızlıca dönüş yapmak', explanation: 'Riskli tercih! Bu hareket karşıdan gelen araçla çarpışmaya neden olabilir ve sizin hatanız sayılır.' }
+            ]
+        },
+        en: {
+            title: 'Left Turn with Oncoming Traffic',
+            question: 'You want to turn left at a green light but there are vehicles going straight from opposite direction. What should you do?',
+            options: [
+                { text: 'A) Wait for oncoming vehicles to pass', explanation: 'Correct choice! When turning left, you must yield to vehicles going straight or turning right from opposite direction. This rule prevents collisions.' },
+                { text: 'B) Make a quick turn', explanation: 'Risky choice! This action can cause collision with oncoming vehicles and would be your fault.' }
+            ]
+        }
+    },
+    'scenario-6': {
+        tr: {
+            title: 'Yağmurlu Havada Fren',
+            question: 'Yağmurlu havada giderken tali yoldan ana yola bağlanmaya çalışan bir sürücü varsa ne yapmalısınız?',
+            options: [
+                { text: 'A) Kademeli fren yapıp dikkat etmek', explanation: 'Doğru tercih! Yağmurlu havada yol tutuşu azaldığı için kademeli fren yapmak ve dikkatli olmak aracın kontrolünü korumanızı sağlar. Tali yoldan gelen sürücüye karşı hazırlıklı olmalısınız.' },
+                { text: 'B) Hiçbir şey yapmadan yolumuza devam etmek', explanation: 'Riskli tercih! Ana yolda öncelik sizde olsa bile, savunma sürüşü yapmalı ve diğer sürücülerin hata yapabileceğini göz önünde bulundurmalısınız. Yağmurlu havada daha da dikkatli olunmalıdır.' }
+            ]
+        },
+        en: {
+            title: 'Braking in Rainy Weather',
+            question: 'While driving in rainy weather, there is a driver trying to merge from a side road onto the main road. What should you do?',
+            options: [
+                { text: 'A) Apply gradual braking and be cautious', explanation: 'Correct choice! In rainy weather, road grip is reduced, so gradual braking and caution help maintain vehicle control. Be prepared for drivers merging from side roads.' },
+                { text: 'B) Continue on your way without doing anything', explanation: 'Risky choice! Even though you have priority on the main road, practice defensive driving and consider that other drivers may make mistakes. Extra caution is needed in rainy weather.' }
+            ]
+        }
+    },
+    'scenario-7': {
+        tr: {
+            title: 'Takip Mesafesi İhlali',
+            question: 'Otobanda 120 km/s hızla giderken önünüzdeki araç ile aranızda 1 araç boyu mesafe var. Ne yapmalısınız?',
+            options: [
+                { text: 'A) Takip mesafesini artırmak için yavaşlamak', explanation: 'Doğru tercih! Yüksek hızlarda takip mesafesi çok önemlidir. Güvenli mesafe minimum 2-3 saniye olmalıdır.' },
+                { text: 'B) Mevcut hızda devam etmek', explanation: 'Riskli tercih! Yetersiz takip mesafesi önünüzdeki araç fren yaptığında size tepki süresi bırakmaz ve zincirleme kazalara yol açabilir.' }
+            ]
+        },
+        en: {
+            title: 'Following Distance Violation',
+            question: 'You are driving at 120 km/h on the highway with only one car length between you and the vehicle ahead. What should you do?',
+            options: [
+                { text: 'A) Slow down to increase following distance', explanation: 'Correct choice! Following distance is critical at high speeds. Safe distance should be minimum 2-3 seconds.' },
+                { text: 'B) Continue at current speed', explanation: 'Risky choice! Insufficient following distance leaves no reaction time when the vehicle ahead brakes, leading to chain collisions.' }
+            ]
+        }
+    },
+    'scenario-8': {
+        tr: {
+            title: 'Yüksek Rüzgar ve Yağmurda Aşırı Hız',
+            question: 'Yağmurlu ve yükseltili bir yolda giderken aşırı rüzgar ve yağmur nedeniyle aracınız savruluyor. Ne yapmalısınız?',
+            options: [
+                { text: 'A) Hızı düşürmek ve direksiyonu sıkı tutmak', explanation: 'Doğru tercih! Yüksek rüzgar ve yağmurda aşırı hız, aracın savrulmasına ve kontrolün kaybedilmesine neden olur. Hızı düşürmek ve direksiyonu iki elle sıkıca tutmak güvenliği sağlar.' },
+                { text: 'B) Mevcut hızda devam etmek', explanation: 'Riskli tercih! Açık havada yüksek rüzgar ve yağmur altında aşırı hız, aracın savrulmasına, şeritten çıkmasına veya devrilmesine neden olabilir. Hava koşullarına göre hız ayarlamak hayati önem taşır.' }
+            ]
+        },
+        en: {
+            title: 'High Wind and Rain at Excessive Speed',
+            question: 'While driving on a rainy and elevated road, your vehicle is swaying due to strong wind and rain. What should you do?',
+            options: [
+                { text: 'A) Reduce speed and hold the steering wheel firmly', explanation: 'Correct choice! Excessive speed in high wind and rain causes vehicle swaying and loss of control. Reducing speed and firmly holding the wheel with both hands ensures safety.' },
+                { text: 'B) Continue at current speed', explanation: 'Risky choice! Excessive speed in open areas under high wind and rain can cause vehicle swaying, lane departure, or rollover. Adjusting speed according to weather conditions is vital.' }
+            ]
+        }
+    },
+    'scenario-9': {
+        tr: {
+            title: 'Telefon Kullanımı',
+            question: 'Şehir içinde sürüş yaparken telefonunuz çalıyor. Ne yapmalısınız?',
+            options: [
+                { text: 'A) Güvenli bir yere çekip telefonu açmak', explanation: 'Doğru tercih! Sürüş sırasında telefon kullanımı hem yasaktır hem de kazalara neden olur. Güvenli bir yere çekmek en doğru davranıştır.' },
+                { text: 'B) Sürüş yaparken ahizesiz telefonu açmak', explanation: 'Riskli tercih! Ahizesiz de olsa telefon konuşması dikkatinizi dağıtır ve kaza riskini artırır.' }
+            ]
+        },
+        en: {
+            title: 'Phone Usage',
+            question: 'Your phone rings while driving in the city. What should you do?',
+            options: [
+                { text: 'A) Pull over to a safe place and answer the phone', explanation: 'Correct choice! Phone usage while driving is both illegal and causes accidents. Pulling over safely is the right behavior.' },
+                { text: 'B) Answer the phone hands-free while driving', explanation: 'Risky choice! Even hands-free, phone conversations distract you and increase accident risk.' }
+            ]
+        }
+    },
+    'scenario-10': {
+        tr: {
+            title: 'Yorgun Sürücü',
+            question: 'Uzun bir yolculuk sırasında uykulu hissetmeye başladınız. En güvenli hareket nedir?',
+            options: [
+                { text: 'A) Dinlenmek için bir molaya çekmek', explanation: 'Doğru tercih! Yorgunluk kazaların en önemli nedenlerinden biridir. Düzenli molalar vermek hayat kurtarır.' },
+                { text: 'B) Müzik açarak uyanık kalmaya çalışmak', explanation: 'Riskli tercih! Müzik veya enerji içeceği gibi çözümler geçicidir. Yorgunluğun tek çözümü dinlenmektir.' }
+            ]
+        },
+        en: {
+            title: 'Tired Driver',
+            question: 'You start feeling sleepy during a long journey. What is the safest action?',
+            options: [
+                { text: 'A) Pull over for a rest break', explanation: 'Correct choice! Fatigue is one of the most important causes of accidents. Taking regular breaks saves lives.' },
+                { text: 'B) Try to stay awake by playing music', explanation: 'Risky choice! Solutions like music or energy drinks are temporary. The only solution to fatigue is rest.' }
+            ]
+        }
+    },
+    'scenario-11': {
+        tr: {
+            title: 'Karşıdan Gelen Araç Farları',
+            question: 'Gece sürüşü sırasında karşıdan gelen araç uzun farla gelmeye devam ediyor ve gözleriniz kamaşıyor. Ne yapmalısınız?',
+            options: [
+                { text: 'A) Yol kenarındaki beyaz çizgiyi takip ederek dikkatli ilerlemek', explanation: 'Doğru tercih! Kamaşma durumunda yol kenarı çizgisini referans almak ve gerekirse yavaşlamak güvenli sürüşün anahtarıdır.' },
+                { text: 'B) Karşılık vermek için kendi farlarınızı uzun yakmak', explanation: 'Riskli tercih! Karşılık vermek her iki sürücünün de görüşünü bozar ve kaza riskini artırır. Asla uzun far ile karşılık verilmemelidir.' }
+            ]
+        },
+        en: {
+            title: 'Oncoming Vehicle High Beams',
+            question: 'During night driving, an oncoming vehicle continues with high beams and your eyes are dazzled. What should you do?',
+            options: [
+                { text: 'A) Follow the white line on the road edge and proceed carefully', explanation: 'Correct choice! When dazzled, using the edge line as reference and slowing down if necessary is key to safe driving.' },
+                { text: 'B) Retaliate by turning on your own high beams', explanation: 'Risky choice! Retaliating impairs both drivers\' vision and increases accident risk. Never retaliate with high beams.' }
+            ]
+        }
+    },
+    'scenario-12': {
+        tr: {
+            title: 'Yaban Hayvanı Riski',
+            question: 'Gece kırsalda sürüş yaparken bir geyik yola atladı. En güvenli hareket nedir?',
+            options: [
+                { text: 'A) Düz fren yapıp şeritte kalmaya çalışmak', explanation: 'Doğru tercih! Hayvan çarpması ciddi olsa da şeritten çıkmak veya karşı şeride geçmek çok daha tehlikelidir. Düz fren en güvenli seçenektir.' },
+                { text: 'B) Ani direksiyon ile kaçınmaya çalışmak', explanation: 'Riskli tercih! Ani manevra yoldan çıkmanıza veya karşı şeritten gelen araçla çarpışmanıza neden olabilir.' }
+            ]
+        },
+        en: {
+            title: 'Wildlife Risk',
+            question: 'While driving in rural area at night, a deer jumped onto the road. What is the safest action?',
+            options: [
+                { text: 'A) Brake straight and try to stay in lane', explanation: 'Correct choice! Although animal collision is serious, leaving the lane or entering oncoming traffic is much more dangerous. Straight braking is the safest option.' },
+                { text: 'B) Try to avoid with sudden steering', explanation: 'Risky choice! Sudden maneuver can cause you to leave the road or collide with oncoming traffic.' }
+            ]
+        }
+    },
+    'scenario-13': {
+        tr: {
+            title: 'Çocuk Güvenliği',
+            question: 'Okul çıkışı saatinde okul önünden geçiyorsunuz. Kaldırımda birçok çocuk var. Ne yapmalısınız?',
+            options: [
+                { text: 'A) Hızı azaltıp her an durmaya hazır olmak', explanation: 'Doğru tercih! Çocuklar öngörülemez davranışlar sergileyebilir. Okul bölgelerinde ekstra dikkatli olmak ve hızı düşürmek şarttır.' },
+                { text: 'B) Normal hızda devam etmek', explanation: 'Riskli tercih! Çocukların ani hareketlerine karşı tepki süreniz yetersiz kalabilir.' }
+            ]
+        },
+        en: {
+            title: 'Child Safety',
+            question: 'You are passing by a school during dismissal time. There are many children on the sidewalk. What should you do?',
+            options: [
+                { text: 'A) Reduce speed and be ready to stop at any moment', explanation: 'Correct choice! Children can exhibit unpredictable behaviors. Being extra cautious and reducing speed in school zones is essential.' },
+                { text: 'B) Continue at normal speed', explanation: 'Risky choice! Your reaction time may be insufficient for children\'s sudden movements.' }
+            ]
+        }
+    },
+    'scenario-14': {
+        tr: {
+            title: 'Yaşlı Yaya Geçişi',
+            question: 'Yaşlı bir yaya yaya geçidinde yavaş yavaş karşıya geçiyor. Ne yapmalısınız?',
+            options: [
+                { text: 'A) Sabırla beklemek ve acele ettirmemek', explanation: 'Doğru tercih! Yaşlı yayalar daha yavaş hareket eder. Onları acele ettirmek veya stres yaratmak tehlikelidir.' },
+                { text: 'B) Korna çalarak acele etmesini sağlamak', explanation: 'Riskli tercih! Korna çalmak yaşlı yayayı korkutabilir ve düşmesine neden olabilir.' }
+            ]
+        },
+        en: {
+            title: 'Elderly Pedestrian Crossing',
+            question: 'An elderly pedestrian is slowly crossing at a crosswalk. What should you do?',
+            options: [
+                { text: 'A) Wait patiently without rushing them', explanation: 'Correct choice! Elderly pedestrians move more slowly. Rushing them or creating stress is dangerous.' },
+                { text: 'B) Honk to make them hurry', explanation: 'Risky choice! Honking can startle the elderly pedestrian and cause them to fall.' }
+            ]
+        }
+    },
+    'scenario-15': {
+        tr: {
+            title: 'Dönel Kavşak Girişi',
+            question: 'Dönel kavşağa girmek istiyorsunuz. Sağdan araç yaklaşıyor. Ne yapmalısınız?',
+            options: [
+                { text: 'A) Dönel kavşaktaki araca yol vermek', explanation: 'Doğru tercih! Dönel kavşaklarda içerideki araçlar önceliklidir. Girmeden önce mutlaka yol vermelisiniz.' },
+                { text: 'B) Hızla kavşağa girmek', explanation: 'Riskli tercih! Öncelik kuralını ihlal etmek ciddi çarpışmalara yol açar.' }
+            ]
+        },
+        en: {
+            title: 'Roundabout Entry',
+            question: 'You want to enter a roundabout. A vehicle is approaching from the right. What should you do?',
+            options: [
+                { text: 'A) Yield to vehicles in the roundabout', explanation: 'Correct choice! Vehicles inside the roundabout have priority. You must yield before entering.' },
+                { text: 'B) Enter the roundabout quickly', explanation: 'Risky choice! Violating priority rules leads to serious collisions.' }
+            ]
+        }
+    },
+    'scenario-16': {
+        tr: {
+            title: 'U Dönüşü Yapma',
+            question: 'Yoğun trafikte U dönüşü yapmak istiyorsunuz. En güvenli yöntem nedir?',
+            options: [
+                { text: 'A) Her iki yönden de yol açık olduğunda dönüş yapmak', explanation: 'Doğru tercih! U dönüşü riskli bir manevrадыr. Tüm yönlerden gelen trafiği kontrol etmek şarttır.' },
+                { text: 'B) Sadece kendi şeridinizdeki trafiği kontrol etmek', explanation: 'Riskli tercih! Karşı şeritten gelen araçları görmezden gelmek ciddi kazalara neden olur.' }
+            ]
+        },
+        en: {
+            title: 'Making a U-Turn',
+            question: 'You want to make a U-turn in heavy traffic. What is the safest method?',
+            options: [
+                { text: 'A) Make the turn when the road is clear from both directions', explanation: 'Correct choice! U-turns are risky maneuvers. Checking traffic from all directions is essential.' },
+                { text: 'B) Only check traffic in your own lane', explanation: 'Risky choice! Ignoring vehicles from oncoming lanes causes serious accidents.' }
+            ]
+        }
+    },
+    'scenario-17': {
+        tr: {
+            title: 'Buzlu Yolda Fren',
+            question: 'Buzlu yolda sürüş yaparken önünüzdeki araç durdu. Nasıl fren yapmalısınız?',
+            options: [
+                { text: 'A) Kısa kısa fren yaparak (pompalama tekniği)', explanation: 'Doğru tercih! Buzlu yolda pompalama tekniği tekerleklerin kilitlenmesini önler ve kontrolü sürdürmenizi sağlar.' },
+                { text: 'B) Ani ve sert fren yaparak', explanation: 'Riskli tercih! Ani fren buzlu yolda tekerlekleri kilitler ve kontrolü tamamen kaybedersiniz.' }
+            ]
+        },
+        en: {
+            title: 'Braking on Icy Road',
+            question: 'While driving on an icy road, the vehicle ahead stopped. How should you brake?',
+            options: [
+                { text: 'A) Apply short, repeated braking (pumping technique)', explanation: 'Correct choice! Pumping technique on icy roads prevents wheel lockup and helps maintain control.' },
+                { text: 'B) Apply sudden and hard braking', explanation: 'Risky choice! Sudden braking on icy roads locks the wheels and you completely lose control.' }
+            ]
+        }
+    },
+    'scenario-18': {
+        tr: {
+            title: 'Hız Limitinin Üzerinde',
+            question: 'Otobanda hız limiti 120 km/s. Arkadan gelen araç farla sinyal veriyor. Ne yapmalısınız?',
+            options: [
+                { text: 'A) Güvenli bir şekilde sağ şeride geçmek', explanation: 'Doğru tercih! Sol şerit sollama şerididir. Sollama yapmıyorsanız sağ şeride geçmelisiniz.' },
+                { text: 'B) Hızınızı daha da düşürerek öğüt vermek', explanation: 'Riskli tercih! Bu davranış trafik akışını bozar ve saldırgan sürücü davranışlarını tetikler.' }
+            ]
+        },
+        en: {
+            title: 'Above Speed Limit',
+            question: 'The speed limit on the highway is 120 km/h. A vehicle behind is flashing its lights. What should you do?',
+            options: [
+                { text: 'A) Safely move to the right lane', explanation: 'Correct choice! The left lane is for overtaking. If you are not overtaking, you should move to the right lane.' },
+                { text: 'B) Slow down even more to teach a lesson', explanation: 'Risky choice! This behavior disrupts traffic flow and triggers aggressive driving behaviors.' }
+            ]
+        }
+    },
+    'scenario-19': {
+        tr: {
+            title: 'Yemek Yerken Sürüş',
+            question: 'Acele bir toplantıya giderken arabada kahvaltı yapmaya karar verdiniz. Doğru olan nedir?',
+            options: [
+                { text: 'A) Güvenli bir yere çekip yemek yemek', explanation: 'Doğru tercih! Sürüş sırasında yemek yemek dikkatinizi önemli ölçüde dağıtır ve kaza riskini artırır.' },
+                { text: 'B) Düz yolda dikkatli bir şekilde yemek', explanation: 'Riskli tercih! Düz yol bile olsa elleriniz direksiyonda değildir ve dikkatiniz bölünmüştür.' }
+            ]
+        },
+        en: {
+            title: 'Eating While Driving',
+            question: 'You decided to have breakfast in the car while rushing to a meeting. What is correct?',
+            options: [
+                { text: 'A) Pull over to a safe place and eat', explanation: 'Correct choice! Eating while driving significantly distracts you and increases accident risk.' },
+                { text: 'B) Eat carefully on a straight road', explanation: 'Risky choice! Even on a straight road, your hands are not on the wheel and your attention is divided.' }
+            ]
+        }
+    },
+    'scenario-20': {
+        tr: {
+            title: 'Navigasyon Ayarı',
+            question: 'Sürüş sırasında navigasyon cihazınızın ayarını değiştirmeniz gerekiyor. Ne yapmalısınız?',
+            options: [
+                { text: 'A) Güvenli bir yere çekip ayarları değiştirmek', explanation: 'Doğru tercih! Navigasyon ile uğraşmak gözlerinizin yoldan kaymasına neden olur. Durmak en güvenli seçenektir.' },
+                { text: 'B) Kırmızı ışıkta beklerken ayarlamak', explanation: 'Riskli tercih! Işık değiştiğinde hazır olmayabilirsiniz ve arkadan gelebilecek çarpmalara karşı savunmasız kalırsınız.' }
+            ]
+        },
+        en: {
+            title: 'Navigation Adjustment',
+            question: 'You need to change your navigation device settings while driving. What should you do?',
+            options: [
+                { text: 'A) Pull over to a safe place and change settings', explanation: 'Correct choice! Dealing with navigation causes your eyes to leave the road. Stopping is the safest option.' },
+                { text: 'B) Adjust it while waiting at a red light', explanation: 'Risky choice! You may not be ready when the light changes and are vulnerable to rear-end collisions.' }
+            ]
+        }
+    },
+    'scenario-21': {
+        tr: {
+            title: 'Sis Lambası Kullanımı',
+            question: 'Yoğun siste sürüş yapıyorsunuz. Hangi farları kullanmalısınız?',
+            options: [
+                { text: 'A) Sis farları ve kısa farları', explanation: 'Doğru tercih! Uzun farlar siste yansıma yapar ve görüşü daha da kötüleştirir. Sis farları ve kısa farlar en iyisidir.' },
+                { text: 'B) Uzun farları', explanation: 'Riskli tercih! Uzun farlar siste parlak bir perde oluşturur ve hiçbir şey görmezsiniz.' }
+            ]
+        },
+        en: {
+            title: 'Fog Light Usage',
+            question: 'You are driving in heavy fog. Which lights should you use?',
+            options: [
+                { text: 'A) Fog lights and low beams', explanation: 'Correct choice! High beams reflect in fog and worsen visibility. Fog lights and low beams are best.' },
+                { text: 'B) High beams', explanation: 'Risky choice! High beams create a bright curtain in fog and you cannot see anything.' }
+            ]
+        }
+    },
+    'scenario-22': {
+        tr: {
+            title: 'Kırsal Alanda Gece Sürüşü',
+            question: 'Aydınlatması olmayan kırsal yolda gece sürüşü yapıyorsunuz. Hızınız ne olmalı?',
+            options: [
+                { text: 'A) Farların aydınlattığı mesafede durabilecek hızda', explanation: 'Doğru tercih! Gece görüş mesafeniz sınırlıdır. Farlarınızın aydınlattığı mesafede durabilecek hızda gitmelisiniz.' },
+                { text: 'B) Gündüz gittiğiniz hızda', explanation: 'Riskli tercih! Gece görüş mesafeniz çok daha kısadır. Gündüz hızıyla gitmek tehlike algılama sürenizi azaltır.' }
+            ]
+        },
+        en: {
+            title: 'Night Driving in Rural Area',
+            question: 'You are driving at night on an unlit rural road. What should your speed be?',
+            options: [
+                { text: 'A) Speed at which you can stop within the distance illuminated by headlights', explanation: 'Correct choice! Your visibility at night is limited. You should drive at a speed where you can stop within the distance your headlights illuminate.' },
+                { text: 'B) Same speed as daytime', explanation: 'Risky choice! Your visibility at night is much shorter. Driving at daytime speed reduces your hazard detection time.' }
+            ]
+        }
+    },
+    'scenario-23': {
+        tr: {
+            title: 'Bisikletli ile Yan Yana',
+            question: 'Dar bir yolda önünüzde bisiklet sürücüsü var. Nasıl sollama yapmalısınız?',
+            options: [
+                { text: 'A) En az 1.5 metre mesafe bırakarak güvenli sollama yapmak', explanation: 'Doğru tercih! Bisikletliler savunmasızdır. Güvenli mesafe bırakmak ve yavaş sollama yapmak şarttır.' },
+                { text: 'B) Yan tarafından hızlıca geçmek', explanation: 'Riskli tercih! Hızlı geçiş bisikletliyi dengesini kaybettirebilir veya çarpabilirsiniz.' }
+            ]
+        },
+        en: {
+            title: 'Alongside a Cyclist',
+            question: 'There is a cyclist ahead on a narrow road. How should you overtake?',
+            options: [
+                { text: 'A) Overtake safely leaving at least 1.5 meters distance', explanation: 'Correct choice! Cyclists are vulnerable. Leaving safe distance and overtaking slowly is essential.' },
+                { text: 'B) Pass quickly from the side', explanation: 'Risky choice! Quick passing can make the cyclist lose balance or you may hit them.' }
+            ]
+        }
+    },
+    'scenario-24': {
+        tr: {
+            title: 'Yeşil Işıkta Yaya',
+            question: 'Yeşil ışıkta sağa dönüyorsunuz ama yaya geçidinde yayalar var. Ne yapmalısınız?',
+            options: [
+                { text: 'A) Yayaların geçmesini beklemek', explanation: 'Doğru tercih! Yeşil ışığınız olsa bile yaya geçidindeki yayalara yol vermek zorundasınız.' },
+                { text: 'B) Yavaşça arayı bulup geçmek', explanation: 'Riskli tercih! Yayaların güvenliği her zaman önceliktir. Geçişlerini tamamlamalarını beklemelisiniz.' }
+            ]
+        },
+        en: {
+            title: 'Pedestrians at Green Light',
+            question: 'You are turning right at a green light but there are pedestrians at the crosswalk. What should you do?',
+            options: [
+                { text: 'A) Wait for pedestrians to pass', explanation: 'Correct choice! Even if you have a green light, you must yield to pedestrians at the crosswalk.' },
+                { text: 'B) Slowly find a gap and pass', explanation: 'Risky choice! Pedestrian safety is always priority. You must wait for them to complete their crossing.' }
+            ]
+        }
+    },
+    'scenario-25': {
+        tr: {
+            title: 'Aşırı Hız Virajda',
+            question: 'Dağ yolunda keskin bir viraja hızlı yaklaştığınızı fark ettiniz. En güvenli hareket nedir?',
+            options: [
+                { text: 'A) Virajdan önce yavaşlamak', explanation: 'Doğru tercih! Viraj içinde fren yapmak aracın dengesini bozar. Doğru olan virajdan önce hızı düşürmektir.' },
+                { text: 'B) Viraj içinde fren yapmak', explanation: 'Riskli tercih! Viraj içinde fren yapmak ağırlık transferi nedeniyle aracın kontrolünü kaybetmenize ve yoldan çıkmanıza neden olabilir.' }
+            ]
+        },
+        en: {
+            title: 'Excessive Speed in Curve',
+            question: 'You realized you are approaching a sharp curve quickly on a mountain road. What is the safest action?',
+            options: [
+                { text: 'A) Slow down before the curve', explanation: 'Correct choice! Braking inside a curve disturbs vehicle balance. The correct action is to reduce speed before the curve.' },
+                { text: 'B) Brake inside the curve', explanation: 'Risky choice! Braking inside a curve can cause loss of vehicle control and road departure due to weight transfer.' }
+            ]
+        }
+    },
+    'scenario-26': {
+        tr: {
+            title: 'Yeşil Işık Yanarken Geçiş',
+            question: 'Kavşakta yeşil ışık size yanıyor ve hızınızla ilerliyorsunuz. Soldan kırmızı ışığa rağmen bir araç yola atlamış. Ne yapmalısınız?',
+            options: [
+                { text: 'A) Dikkatli olmak ve frene hazır bulunmak', explanation: 'Doğru tercih! Yeşil ışık geçiş hakkı verir ancak kırmızı ışıkta geçen araçlar olabilir. Savunma sürüşü yaparak her zaman dikkatli ve frene hazır olmalısınız.' },
+                { text: 'B) Hızınızı bozmadan devam etmek', explanation: 'Riskli tercih! Kırmızı ışıkta geçen araçla çarpışma riski vardır. Yeşil ışığınız olsa bile çevreye dikkat etmek ve savunma sürüşü yapmak hayati önem taşır.' }
+            ]
+        },
+        en: {
+            title: 'Crossing at Green Light',
+            question: 'You have a green light at an intersection and are proceeding at your speed. A vehicle has jumped into the road from the left despite the red light. What should you do?',
+            options: [
+                { text: 'A) Be cautious and ready to brake', explanation: 'Correct choice! Green light gives you right of way but vehicles may run red lights. Practice defensive driving and always be cautious and ready to brake.' },
+                { text: 'B) Continue without changing speed', explanation: 'Risky choice! There is risk of collision with vehicles running red lights. Even with a green light, paying attention to surroundings and defensive driving is vital.' }
             ]
         }
     }
@@ -312,6 +762,32 @@ const scenarios = [
     },
     {
         id: 'scenario-8',
+        title: 'Yüksek Rüzgar ve Yağmurda Aşırı Hız',
+        category: 'Hız ve Fren Mesafesi',
+        categoryId: 'hiz-fren',
+        difficulty: 'zor',
+        locked: true,
+        thumbnail: 'https://images.unsplash.com/photo-1493238792000-8113da705763?w=600&h=400&fit=crop',
+        videoUrl: 'vid/sc-3.3.mp4',
+        question: 'Yağmurlu ve yükseltili bir yolda giderken aşırı rüzgar ve yağmur nedeniyle aracınız savruluyor. Ne yapmalısınız?',
+        options: [
+            {
+                id: 'a',
+                text: 'A) Hızı düşürmek ve direksiyonu sıkı tutmak',
+                correct: true,
+                explanation: 'Doğru tercih! Yüksek rüzgar ve yağmurda aşırı hız, aracın savrulmasına ve kontrolün kaybedilmesine neden olur. Hızı düşürmek ve direksiyonu iki elle sıkıca tutmak güvenliği sağlar.'
+            },
+            {
+                id: 'b',
+                text: 'B) Mevcut hızda devam etmek',
+                correct: false,
+                explanation: 'Riskli tercih! Açık havada yüksek rüzgar ve yağmur altında aşırı hız, aracın savrulmasına, şeritten çıkmasına veya devrilmesine neden olabilir. Hava koşullarına göre hız ayarlamak hayati önem taşır.',
+                failVideo: 'vid/sc-3.3-f.mp4'
+            }
+        ]
+    },
+    {
+        id: 'scenario-25',
         title: 'Aşırı Hız Virajda',
         category: 'Hız ve Fren Mesafesi',
         categoryId: 'hiz-fren',
@@ -336,11 +812,11 @@ const scenarios = [
         ]
     },
 
-    // Dikkat Dağınıklığı
+    // Kurallar ve Dikkat Dağınıklığı
     {
         id: 'scenario-9',
         title: 'Telefon Kullanımı',
-        category: 'Dikkat Dağınıklığı',
+        category: 'Kurallar ve Dikkat Dağınıklığı',
         categoryId: 'dikkat-daginiklik',
         difficulty: 'kolay',
         locked: false,
@@ -365,7 +841,7 @@ const scenarios = [
     {
         id: 'scenario-10',
         title: 'Yorgun Sürücü',
-        category: 'Dikkat Dağınıklığı',
+        category: 'Kurallar ve Dikkat Dağınıklığı',
         categoryId: 'dikkat-daginiklik',
         difficulty: 'orta',
         locked: true,
@@ -384,6 +860,32 @@ const scenarios = [
                 text: 'B) Müzik açarak uyanık kalmaya çalışmak',
                 correct: false,
                 explanation: 'Riskli tercih! Müzik veya enerji içeceği gibi çözümler geçicidir. Yorgunluğun tek çözümü dinlenmektir.'
+            }
+        ]
+    },
+    {
+        id: 'scenario-26',
+        title: 'Yeşil Işık Yanarken Geçiş',
+        category: 'Kurallar ve Dikkat Dağınıklığı',
+        categoryId: 'dikkat-daginiklik',
+        difficulty: 'kolay',
+        locked: true,
+        thumbnail: 'https://images.unsplash.com/photo-1561214115-f2f134cc4912?w=600&h=400&fit=crop',
+        videoUrl: 'vid/sc-4.3.mp4',
+        question: 'Kavşakta yeşil ışık size yanıyor ve hızınızla ilerliyorsunuz. Soldan kırmızı ışığa rağmen bir araç yola atlamış. Ne yapmalısınız?',
+        options: [
+            {
+                id: 'a',
+                text: 'A) Dikkatli olmak ve frene hazır bulunmak',
+                correct: true,
+                explanation: 'Doğru tercih! Yeşil ışık geçiş hakkı verir ancak kırmızı ışıkta geçen araçlar olabilir. Savunma sürüşü yaparak her zaman dikkatli ve frene hazır olmalısınız.'
+            },
+            {
+                id: 'b',
+                text: 'B) Hızınızı bozmadan devam etmek',
+                correct: false,
+                explanation: 'Riskli tercih! Kırmızı ışıkta geçen araçla çarpışma riski vardır. Yeşil ışığınız olsa bile çevreye dikkat etmek ve savunma sürüşü yapmak hayati önem taşır.',
+                failVideo: 'vid/sc-4.3-f.mp4'
             }
         ]
     },
@@ -592,7 +1094,7 @@ const scenarios = [
     {
         id: 'scenario-19',
         title: 'Yemek Yerken Sürüş',
-        category: 'Dikkat Dağınıklığı',
+        category: 'Kurallar ve Dikkat Dağınıklığı',
         categoryId: 'dikkat-daginiklik',
         difficulty: 'kolay',
         locked: true,
@@ -617,7 +1119,7 @@ const scenarios = [
     {
         id: 'scenario-20',
         title: 'Navigasyon Ayarı',
-        category: 'Dikkat Dağınıklığı',
+        category: 'Kurallar ve Dikkat Dağınıklığı',
         categoryId: 'dikkat-daginiklik',
         difficulty: 'orta',
         locked: true,
@@ -804,7 +1306,7 @@ function setupEventListeners() {
 
     // View All buttons
     document.querySelectorAll('.view-all').forEach((button, index) => {
-        const categories = ['Yaya Güvenliği', 'Kavşak ve Dönüşler', 'Hız ve Fren Mesafesi', 'Dikkat Dağınıklığı', 'Gece Sürüşü'];
+        const categories = ['Yaya Güvenliği', 'Kavşak ve Dönüşler', 'Hız ve Fren Mesafesi', 'Kurallar ve Dikkat Dağınıklığı', 'Gece Sürüşü'];
         button.addEventListener('click', (e) => {
             e.preventDefault();
             openCategoryModal(categories[index]);
@@ -921,7 +1423,8 @@ function openScenario(scenarioId) {
     }
 
     // Populate modal
-    document.getElementById('scenarioTitle').textContent = currentScenario.title;
+    const scenarioTranslation = scenarioTranslations[scenarioId]?.[currentLanguage];
+    document.getElementById('scenarioTitle').textContent = scenarioTranslation?.title || currentScenario.title;
     document.getElementById('scenarioCategory').textContent = translate(currentScenario.category);
 
     const difficultyBadge = document.getElementById('scenarioDifficulty');
@@ -983,16 +1486,21 @@ function startScenarioSequence() {
 
 function showQuestion() {
     document.getElementById('questionOverlay').classList.add('active');
-    document.getElementById('questionText').textContent = currentScenario.question;
+
+    // Get translation if available
+    const scenarioTranslation = scenarioTranslations[currentScenario.id]?.[currentLanguage];
+    const questionText = scenarioTranslation?.question || currentScenario.question;
+    document.getElementById('questionText').textContent = questionText;
 
     // Render options
     const optionsContainer = document.getElementById('optionsContainer');
     optionsContainer.innerHTML = '';
 
-    currentScenario.options.forEach(option => {
+    currentScenario.options.forEach((option, index) => {
         const btn = document.createElement('button');
         btn.className = 'option-btn';
-        btn.textContent = option.text;
+        const optionText = scenarioTranslation?.options[index]?.text || option.text;
+        btn.textContent = optionText;
         btn.addEventListener('click', () => selectOption(option));
         optionsContainer.appendChild(btn);
     });
@@ -1089,25 +1597,30 @@ function showOutcome(option, score, timedOut) {
     const outcomeExplanation = document.getElementById('outcomeExplanation');
     const outcomeScoreText = document.getElementById('outcomeScoreText');
 
+    // Get translation if available
+    const scenarioTranslation = scenarioTranslations[currentScenario.id]?.[currentLanguage];
+    const optionIndex = currentScenario.options.findIndex(opt => opt.id === option.id);
+    const explanationText = scenarioTranslation?.options[optionIndex]?.explanation || option.explanation;
+
     if (timedOut) {
         outcomeIcon.textContent = '⏱️';
         outcomeTitle.textContent = translate('time_up');
         outcomeTitle.style.color = 'var(--warning-color)';
-        outcomeExplanation.textContent = translate('time_up_msg') + ' ' + option.explanation;
+        outcomeExplanation.textContent = translate('time_up_msg') + ' ' + explanationText;
         outcomeScoreText.textContent = `0 ${translate('points')}`;
         outcomeScoreText.style.color = 'var(--danger-color)';
     } else if (option.correct) {
         outcomeIcon.textContent = '✅';
         outcomeTitle.textContent = translate('correct_choice');
         outcomeTitle.style.color = 'var(--success-color)';
-        outcomeExplanation.textContent = option.explanation;
+        outcomeExplanation.textContent = explanationText;
         outcomeScoreText.textContent = `+${score} ${translate('points')}`;
         outcomeScoreText.style.color = 'var(--success-color)';
     } else {
         outcomeIcon.textContent = '❌';
         outcomeTitle.textContent = translate('risky_choice');
         outcomeTitle.style.color = 'var(--danger-color)';
-        outcomeExplanation.textContent = option.explanation;
+        outcomeExplanation.textContent = explanationText;
         outcomeScoreText.textContent = `0 ${translate('points')}`;
         outcomeScoreText.style.color = 'var(--danger-color)';
     }
@@ -1197,7 +1710,7 @@ function switchLanguage(lang) {
 
     // Update category headers
     document.querySelectorAll('.category-header h2').forEach((header, index) => {
-        const categories = ['Yaya Güvenliği', 'Kavşak ve Dönüşler', 'Hız ve Fren Mesafesi', 'Dikkat Dağınıklığı', 'Gece Sürüşü'];
+        const categories = ['Yaya Güvenliği', 'Kavşak ve Dönüşler', 'Hız ve Fren Mesafesi', 'Kurallar ve Dikkat Dağınıklığı', 'Gece Sürüşü'];
         if (categories[index] && t[categories[index]]) {
             header.textContent = t[categories[index]];
         }
@@ -1205,7 +1718,7 @@ function switchLanguage(lang) {
 
     // Update dropdown menu items
     document.querySelectorAll('.dropdown-item').forEach((item, index) => {
-        const categories = ['Yaya Güvenliği', 'Kavşak ve Dönüşler', 'Hız ve Fren Mesafesi', 'Dikkat Dağınıklığı', 'Gece Sürüşü'];
+        const categories = ['Yaya Güvenliği', 'Kavşak ve Dönüşler', 'Hız ve Fren Mesafesi', 'Kurallar ve Dikkat Dağınıklığı', 'Gece Sürüşü'];
         if (categories[index] && t[categories[index]]) {
             item.textContent = t[categories[index]];
         }
