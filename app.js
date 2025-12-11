@@ -1276,6 +1276,18 @@ function setupEventListeners() {
         document.getElementById('categories').scrollIntoView({ behavior: 'smooth' });
     });
 
+    // Navigation menu smooth scroll
+    document.querySelectorAll('.nav-menu > a[href^="#"]').forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const targetId = link.getAttribute('href').substring(1);
+            const targetElement = document.getElementById(targetId);
+            if (targetElement) {
+                targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        });
+    });
+
     // Language toggle switch
     const langToggle = document.getElementById('langToggle');
 
@@ -1380,13 +1392,17 @@ function renderScenarios() {
         const difficultyText = translate(scenario.difficulty);
         const categoryText = translate(scenario.category);
 
+        // Get translated title if available
+        const scenarioTranslation = scenarioTranslations[scenario.id]?.[currentLanguage];
+        const titleText = scenarioTranslation?.title || scenario.title;
+
         card.innerHTML = `
             <div class="card-thumbnail">
-                <img src="${scenario.thumbnail}" alt="${scenario.title}">
+                <img src="${scenario.thumbnail}" alt="${titleText}">
                 ${!isUnlocked ? '<div class="lock-icon">🔒</div>' : ''}
             </div>
             <div class="card-info">
-                <div class="card-title">${scenario.title}</div>
+                <div class="card-title">${titleText}</div>
                 <div class="card-meta">
                     <span class="category-tag">${categoryText}</span>
                     <span class="difficulty-badge difficulty-${scenario.difficulty}">
@@ -1662,10 +1678,14 @@ function updateScores() {
         const scenario = scenarios.find(s => s.id === scenarioId);
         if (!scenario) continue;
 
+        // Get translated title
+        const translation = scenarioTranslations[scenarioId]?.[currentLanguage];
+        const title = translation ? translation.title : scenario.title;
+
         const scoreItem = document.createElement('div');
         scoreItem.className = 'score-item';
         scoreItem.innerHTML = `
-            <div class="score-item-title">${scenario.title}</div>
+            <div class="score-item-title">${title}</div>
             <div class="score-item-points">${data.score} ${translate('points')}</div>
         `;
         scoresList.appendChild(scoreItem);
@@ -1697,6 +1717,9 @@ function switchLanguage(lang) {
 
     // Re-render scenarios with new language
     renderScenarios();
+
+    // Update scores with new language
+    updateScores();
 } function applyLanguage(lang) {
     const t = translations[lang];
 
@@ -1728,6 +1751,38 @@ function switchLanguage(lang) {
     document.querySelectorAll('.view-all').forEach(link => {
         link.textContent = t.view_all;
     });
+
+    // Update featured card in hero section
+    updateFeaturedCard(lang);
+}
+
+function updateFeaturedCard(lang) {
+    const featuredScenarioId = 'scenario-1'; // Zebra Çizgisinde Ani Karar
+    const scenario = scenarios.find(s => s.id === featuredScenarioId);
+
+    if (!scenario) return;
+
+    // Get translation for this scenario
+    const translation = scenarioTranslations[featuredScenarioId]?.[lang];
+    const t = translations[lang];
+
+    // Update title
+    const featuredTitle = document.querySelector('.featured-card h3');
+    if (featuredTitle && translation) {
+        featuredTitle.textContent = translation.title;
+    }
+
+    // Update category tag
+    const categoryTag = document.querySelector('.featured-card .category-tag');
+    if (categoryTag && t[scenario.category]) {
+        categoryTag.textContent = t[scenario.category];
+    }
+
+    // Update difficulty badge
+    const difficultyBadge = document.querySelector('.featured-card .difficulty-badge');
+    if (difficultyBadge && t[scenario.difficulty]) {
+        difficultyBadge.textContent = t[scenario.difficulty];
+    }
 }
 
 function translate(key) {
@@ -1773,15 +1828,19 @@ function openCategoryModal(categoryName) {
             statusText = `<div class="card-status">${translate('not_started')}</div>`;
         }
 
+        // Get translated title if available
+        const scenarioTranslation = scenarioTranslations[scenario.id]?.[currentLanguage];
+        const titleText = scenarioTranslation?.title || scenario.title;
+
         return `
             <div class="scenario-card ${statusClass}" onclick="${isLocked ? '' : `openScenario('${scenario.id}')`}">
                 <div class="card-thumbnail">
-                    <img src="${scenario.thumbnail}" alt="${scenario.title}">
+                    <img src="${scenario.thumbnail}" alt="${titleText}">
                     ${isLocked ? '<div class="lock-icon">🔒</div>' : ''}
                     ${!isLocked ? '<div class="play-icon">▶</div>' : ''}
                 </div>
                 <div class="card-info">
-                    <h3>${scenario.title}</h3>
+                    <h3>${titleText}</h3>
                     <div class="card-meta">
                         <span class="difficulty-badge difficulty-${scenario.difficulty}">${translate(scenario.difficulty)}</span>
                         ${userProgress.completedScenarios[scenario.id] ?
