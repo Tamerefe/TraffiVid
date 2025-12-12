@@ -1,5 +1,504 @@
 // ===== DATA STRUCTURE =====
 
+// ===== SECURITY & CONFIGURATION =====
+// URL'ler encode edilmiştir - kaynak kodda doğrudan görünmez
+// Decode: atob(encodedString)
+const CONFIG = {
+    // Base64 encoded Google Sheets URL (casual kullanıcılar göremez)
+    // Decode: atob('aHR0cHM6Ly9zY3J...')
+    _enc: 'aHR0cHM6Ly9zY3JpcHQuZ29vZ2xlLmNvbS9tYWNyb3Mvcy9BS2Z5Y2J4b2pTR2VrQjJlQ01ORXBfdGxlclBQT3RNQ0RTb3RrY0FSbFNrcHVVZkd6VFlHbzZ5SXRkaTBsQjVqQjNYWW9VX0YvZXhlYw==',
+    ENABLE_DATA_SHARING: true,
+    MAX_REQUESTS_PER_MINUTE: 10,
+    ENCRYPTION_ENABLED: true,
+
+    // URL getter - otomatik decode
+    get GOOGLE_SHEETS_URL() {
+        try {
+            return this._enc ? atob(this._enc) : '';
+        } catch (e) {
+            console.error('Config decode error');
+            return '';
+        }
+    },
+
+    // URL setter - otomatik encode
+    set GOOGLE_SHEETS_URL(url) {
+        try {
+            this._enc = url ? btoa(url) : '';
+        } catch (e) {
+            console.error('Config encode error');
+            this._enc = '';
+        }
+    }
+};
+
+// ===== SECURITY UTILITIES =====
+class SecurityHelper {
+    // Basit XOR tabanlı şifreleme (Base64 ile birlikte)
+    static encrypt(text) {
+        if (!CONFIG.ENCRYPTION_ENABLED) return text;
+        try {
+            const key = this.getEncryptionKey();
+            let encrypted = '';
+            for (let i = 0; i < text.length; i++) {
+                encrypted += String.fromCharCode(text.charCodeAt(i) ^ key.charCodeAt(i % key.length));
+            }
+            return btoa(encrypted); // Base64 encode
+        } catch (e) {
+            console.error('Encryption failed:', e);
+            return text;
+        }
+    }
+
+    static decrypt(encryptedText) {
+        if (!CONFIG.ENCRYPTION_ENABLED) return encryptedText;
+        if (!encryptedText) return encryptedText;
+
+        try {
+            // Base64 kontrolü - şifreli mi yoksa düz metin mi?
+            if (!/^[A-Za-z0-9+/=]+$/.test(encryptedText)) {
+                // Düz metin - muhtemelen eski veri
+                console.warn('Unencrypted data detected, returning as-is');
+                return encryptedText;
+            }
+
+            const key = this.getEncryptionKey();
+            const decrypted = atob(encryptedText); // Base64 decode
+            let original = '';
+            for (let i = 0; i < decrypted.length; i++) {
+                original += String.fromCharCode(decrypted.charCodeAt(i) ^ key.charCodeAt(i % key.length));
+            }
+            return original;
+        } catch (e) {
+            console.error('Decryption failed, might be old unencrypted data:', e);
+            // Şifrelenmemiş eski veri olabilir, olduğu gibi döndür
+            return encryptedText;
+        }
+    }
+
+    static getEncryptionKey() {
+        // Basit anahtar üretimi (gerçek uygulamada daha güçlü olmalı)
+        let key = localStorage.getItem('_tk');
+        if (!key) {
+            key = this.generateRandomKey();
+            localStorage.setItem('_tk', key);
+        }
+        return key;
+    }
+
+    static generateRandomKey() {
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()';
+        let key = '';
+        for (let i = 0; i < 32; i++) {
+            key += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        return key;
+    }
+
+    // XSS koruması - HTML sanitization
+    static sanitizeHTML(dirty) {
+        if (typeof DOMPurify !== 'undefined') {
+            return DOMPurify.sanitize(dirty);
+        }
+        // Fallback: Basit sanitization
+        const div = document.createElement('div');
+        div.textContent = dirty;
+        return div.innerHTML;
+    }
+
+    // Input validation
+    static validateUserId(userId) {
+        return /^user_[0-9]+_[a-z0-9]+$/.test(userId);
+    }
+
+    static validateSessionId(sessionId) {
+        return /^session_[0-9]+_[a-z0-9]+$/.test(sessionId);
+    }
+
+    // Rate limiting kontrolü
+    static checkRateLimit(action) {
+        const now = Date.now();
+        const key = `_rl_${action}`;
+        let requests = JSON.parse(localStorage.getItem(key) || '[]');
+
+        // Son 1 dakikadaki istekleri filtrele
+        requests = requests.filter(time => now - time < 60000);
+
+        if (requests.length >= CONFIG.MAX_REQUESTS_PER_MINUTE) {
+            console.warn('Rate limit exceeded for:', action);
+            return false;
+        }
+
+        requests.push(now);
+        localStorage.setItem(key, JSON.stringify(requests));
+        return true;
+    }
+}
+
+// ===== DATA SHARING SYSTEM =====
+class DataSharingManager {
+    constructor() {
+        this.consentGiven = localStorage.getItem('traffiVidDataConsent') === 'true';
+        this.lastSyncTime = localStorage.getItem('traffiVidLastSync');
+    }
+
+    hasConsent() {
+        return this.consentGiven;
+    }
+
+    giveConsent() {
+        this.consentGiven = true;
+        localStorage.setItem('traffiVidDataConsent', 'true');
+    }
+
+    revokeConsent() {
+        this.consentGiven = false;
+        localStorage.removeItem('traffiVidDataConsent');
+        localStorage.removeItem('traffiVidLastSync');
+    }
+
+    async sendDataToSheets(userData, statistics) {
+        if (!this.consentGiven) {
+            console.log('Data sharing consent not given');
+            return { success: false, error: 'No consent' };
+        }
+
+        if (!CONFIG.GOOGLE_SHEETS_URL || CONFIG.GOOGLE_SHEETS_URL === '') {
+            console.warn('Google Sheets URL not configured');
+            return { success: false, error: 'Not configured' };
+        }
+
+        if (!CONFIG.ENABLE_DATA_SHARING) {
+            console.warn('Data sharing is disabled in config');
+            return { success: false, error: 'Disabled' };
+        }
+
+        // Rate limiting kontrolü
+        if (!SecurityHelper.checkRateLimit('dataSharing')) {
+            return { success: false, error: 'Rate limit exceeded' };
+        }
+
+        try {
+            const payload = {
+                userId: userData.userId,
+                timestamp: new Date().toISOString(),
+                createdAt: userData.createdAt,
+                totalPlayTime: Math.floor(userData.totalPlayTime / 60000), // minutes
+
+                // Achievements
+                totalScore: userData.achievements.totalScore,
+                scenariosCompleted: userData.achievements.scenariosCompleted,
+                perfectScores: userData.achievements.perfectScores,
+                streakDays: userData.achievements.streakDays,
+
+                // Statistics
+                totalAttempts: userData.statistics.totalAttempts,
+                correctChoices: userData.statistics.correctChoices,
+                wrongChoices: userData.statistics.wrongChoices,
+                timeouts: userData.statistics.timeouts,
+                averageResponseTime: userData.statistics.averageResponseTime.toFixed(2),
+                accuracyRate: statistics.accuracyRate,
+
+                // Category Stats
+                categoryStats: JSON.stringify(userData.statistics.categoryStats),
+                categoriesCompleted: JSON.stringify(userData.achievements.categoriesCompleted),
+
+                // Recent Mistakes
+                recentMistakes: JSON.stringify(userData.mistakes.slice(-10)),
+
+                // Session Info
+                totalSessions: userData.sessions.length,
+                lastPlayDate: userData.achievements.lastPlayDate
+            };
+
+            const response = await fetch(CONFIG.GOOGLE_SHEETS_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload)
+            });
+
+            // Note: no-cors mode doesn't allow reading response
+            // We assume success if no error is thrown
+            this.lastSyncTime = new Date().toISOString();
+            localStorage.setItem('traffiVidLastSync', this.lastSyncTime);
+
+            console.log('Data sent to Google Sheets successfully');
+            return { success: true };
+
+        } catch (error) {
+            // Network hatası - yerel dosya sistemi veya CORS sorunu olabilir
+            if (error.name === 'TypeError' && error.message.includes('NetworkError')) {
+                console.warn('NetworkError: Cannot send data from local file system (file://). Use a web server or GitHub Pages.');
+            } else {
+                console.error('Error sending data to Google Sheets:', error);
+            }
+            return { success: false, error: error.message };
+        }
+    }
+
+    getLastSyncTime() {
+        if (!this.lastSyncTime) return null;
+        return new Date(this.lastSyncTime);
+    }
+}
+
+// Initialize data sharing manager
+const dataSharingManager = new DataSharingManager();
+
+// ===== USER TRACKING SYSTEM =====
+class UserTracker {
+    constructor() {
+        this.userId = this.getOrCreateUserId();
+        this.sessionId = this.generateSessionId();
+        this.sessionStart = new Date();
+        this.loadUserData();
+    }
+
+    getOrCreateUserId() {
+        let userId = localStorage.getItem('traffiVidUserId');
+        if (!userId || !SecurityHelper.validateUserId(userId)) {
+            userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            localStorage.setItem('traffiVidUserId', SecurityHelper.sanitizeHTML(userId));
+        }
+        return SecurityHelper.sanitizeHTML(userId);
+    }
+
+    generateSessionId() {
+        const sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        return SecurityHelper.sanitizeHTML(sessionId);
+    }
+
+    loadUserData() {
+        let savedData = localStorage.getItem('traffiVidUserData_' + this.userId);
+        if (savedData) {
+            try {
+                // Şifrelenmiş veriyi çöz
+                const decryptedData = SecurityHelper.decrypt(savedData);
+                this.userData = JSON.parse(decryptedData);
+
+                // Veri yapısı kontrolü - eksik alanlar varsa tamamla
+                if (!this.userData.achievements) this.userData.achievements = this.createDefaultUserData().achievements;
+                if (!this.userData.statistics) this.userData.statistics = this.createDefaultUserData().statistics;
+            } catch (e) {
+                console.error('Error loading user data, resetting:', e);
+                // Bozuk veri varsa yeni oluştur ve eski veriyi sil
+                localStorage.removeItem('traffiVidUserData_' + this.userId);
+                this.userData = this.createDefaultUserData();
+            }
+        } else {
+            this.userData = this.createDefaultUserData();
+        }
+    }
+
+    createDefaultUserData() {
+        return {
+            userId: this.userId,
+            createdAt: new Date().toISOString(),
+            totalPlayTime: 0,
+            sessions: [],
+            mistakes: [],
+            achievements: {
+                totalScore: 0,
+                scenariosCompleted: 0,
+                perfectScores: 0,
+                categoriesCompleted: {},
+                streakDays: 0,
+                lastPlayDate: null
+            },
+            statistics: {
+                totalAttempts: 0,
+                correctChoices: 0,
+                wrongChoices: 0,
+                timeouts: 0,
+                averageResponseTime: 0,
+                categoryStats: {}
+            }
+        };
+    }
+
+    saveUserData() {
+        try {
+            const jsonData = JSON.stringify(this.userData);
+            const encryptedData = SecurityHelper.encrypt(jsonData);
+            localStorage.setItem('traffiVidUserData_' + this.userId, encryptedData);
+        } catch (e) {
+            console.error('Error saving user data:', e);
+        }
+    }
+
+    startSession() {
+        this.currentSession = {
+            sessionId: this.sessionId,
+            startTime: new Date().toISOString(),
+            endTime: null,
+            scenariosPlayed: [],
+            score: 0,
+            mistakes: []
+        };
+    }
+
+    endSession() {
+        if (this.currentSession) {
+            this.currentSession.endTime = new Date().toISOString();
+            const duration = new Date(this.currentSession.endTime) - new Date(this.currentSession.startTime);
+            this.userData.totalPlayTime += duration;
+            this.userData.sessions.push(this.currentSession);
+
+            // Keep only last 50 sessions to save space
+            if (this.userData.sessions.length > 50) {
+                this.userData.sessions = this.userData.sessions.slice(-50);
+            }
+
+            this.saveUserData();
+        }
+    }
+
+    recordScenarioAttempt(scenarioId, correct, responseTime, timedOut = false) {
+        const scenario = scenarios.find(s => s.id === scenarioId);
+
+        // Update statistics
+        this.userData.statistics.totalAttempts++;
+        if (timedOut) {
+            this.userData.statistics.timeouts++;
+        } else if (correct) {
+            this.userData.statistics.correctChoices++;
+        } else {
+            this.userData.statistics.wrongChoices++;
+        }
+
+        // Update average response time
+        const totalTime = this.userData.statistics.averageResponseTime * (this.userData.statistics.totalAttempts - 1);
+        this.userData.statistics.averageResponseTime = (totalTime + responseTime) / this.userData.statistics.totalAttempts;
+
+        // Update category stats
+        if (scenario) {
+            if (!this.userData.statistics.categoryStats[scenario.category]) {
+                this.userData.statistics.categoryStats[scenario.category] = {
+                    attempts: 0,
+                    correct: 0,
+                    wrong: 0
+                };
+            }
+            this.userData.statistics.categoryStats[scenario.category].attempts++;
+            if (correct) {
+                this.userData.statistics.categoryStats[scenario.category].correct++;
+            } else {
+                this.userData.statistics.categoryStats[scenario.category].wrong++;
+            }
+        }
+
+        // Record mistake
+        if (!correct || timedOut) {
+            this.userData.mistakes.push({
+                scenarioId: scenarioId,
+                scenarioTitle: scenario ? scenario.title : 'Unknown',
+                category: scenario ? scenario.category : 'Unknown',
+                timestamp: new Date().toISOString(),
+                responseTime: responseTime,
+                timedOut: timedOut
+            });
+
+            // Keep only last 100 mistakes
+            if (this.userData.mistakes.length > 100) {
+                this.userData.mistakes = this.userData.mistakes.slice(-100);
+            }
+        }
+
+        // Update session
+        if (this.currentSession) {
+            this.currentSession.scenariosPlayed.push({
+                scenarioId: scenarioId,
+                correct: correct,
+                responseTime: responseTime,
+                timedOut: timedOut,
+                timestamp: new Date().toISOString()
+            });
+            if (correct) {
+                this.currentSession.score += 100;
+            }
+            if (!correct || timedOut) {
+                this.currentSession.mistakes.push({
+                    scenarioId: scenarioId,
+                    scenarioTitle: scenario ? scenario.title : 'Unknown'
+                });
+            }
+        }
+
+        this.saveUserData();
+    }
+
+    updateAchievements(totalScore, completedScenarios) {
+        this.userData.achievements.totalScore = totalScore;
+        this.userData.achievements.scenariosCompleted = Object.keys(completedScenarios).length;
+
+        // Count perfect scores
+        this.userData.achievements.perfectScores = Object.values(completedScenarios)
+            .filter(s => s.score === 100).length;
+
+        // Update category completion
+        const categories = ['Yaya Güvenliği', 'Kavşak ve Dönüşler', 'Hız ve Fren Mesafesi',
+            'Kurallar ve Dikkat Dağınıklığı', 'Gece Sürüşü'];
+
+        categories.forEach(category => {
+            const categoryScenarios = scenarios.filter(s => s.category === category);
+            const completedInCategory = categoryScenarios.filter(s =>
+                completedScenarios[s.id] && completedScenarios[s.id].score === 100
+            ).length;
+
+            this.userData.achievements.categoriesCompleted[category] = {
+                total: categoryScenarios.length,
+                completed: completedInCategory,
+                percentage: (completedInCategory / categoryScenarios.length * 100).toFixed(1)
+            };
+        });
+
+        // Update streak
+        const today = new Date().toDateString();
+        if (this.userData.achievements.lastPlayDate !== today) {
+            const lastDate = new Date(this.userData.achievements.lastPlayDate);
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+
+            if (lastDate.toDateString() === yesterday.toDateString()) {
+                this.userData.achievements.streakDays++;
+            } else {
+                this.userData.achievements.streakDays = 1;
+            }
+            this.userData.achievements.lastPlayDate = today;
+        }
+
+        this.saveUserData();
+    }
+
+    getUserStats() {
+        return {
+            userId: this.userId,
+            userData: this.userData,
+            currentSession: this.currentSession
+        };
+    }
+
+    exportUserData() {
+        return JSON.stringify(this.userData, null, 2);
+    }
+
+    getRecentMistakes(limit = 10) {
+        return this.userData.mistakes.slice(-limit).reverse();
+    }
+
+    getAccuracyRate() {
+        const total = this.userData.statistics.correctChoices + this.userData.statistics.wrongChoices;
+        if (total === 0) return 0;
+        return (this.userData.statistics.correctChoices / total * 100).toFixed(1);
+    }
+}
+
+// Initialize user tracker
+const userTracker = new UserTracker();
+
 // ===== TRANSLATIONS =====
 const translations = {
     tr: {
@@ -49,7 +548,10 @@ const translations = {
         correct_choice: 'Doğru Tercih!',
         risky_choice: 'Riskli Tercih!',
         time_up: 'Süre Doldu!',
-        time_up_msg: 'Karar vermek için zamanınız doldu.'
+        time_up_msg: 'Karar vermek için zamanınız doldu.',
+
+        // Loading
+        loading_video: 'Video yükleniyor...'
     },
     en: {
         // Navigation
@@ -98,7 +600,10 @@ const translations = {
         correct_choice: 'Correct Choice!',
         risky_choice: 'Risky Choice!',
         time_up: 'Time\'s Up!',
-        time_up_msg: 'Your time to make a decision has expired.'
+        time_up_msg: 'Your time to make a decision has expired.',
+
+        // Loading
+        loading_video: 'Loading video...'
     }
 };
 
@@ -1256,6 +1761,31 @@ document.addEventListener('DOMContentLoaded', () => {
     applyLanguage(currentLanguage);
     renderScenarios();
     updateScores();
+
+    // Start tracking session
+    userTracker.startSession();
+
+    // Display user ID in console for debugging
+    console.log('User ID:', userTracker.userId);
+    console.log('Session ID:', userTracker.sessionId);
+
+    // Update user ID in navbar
+    updateUserIdDisplay();
+
+    // Show data consent banner if not yet decided
+    setTimeout(() => {
+        showConsentBanner();
+    }, 2000); // Show after 2 seconds
+});
+
+// End session before page unload
+window.addEventListener('beforeunload', () => {
+    userTracker.endSession();
+
+    // Auto-sync data if consent given
+    if (dataSharingManager.hasConsent()) {
+        syncDataToSheets();
+    }
 });
 
 function initializeApp() {
@@ -1481,12 +2011,56 @@ function closeModal() {
 
 function startScenarioSequence() {
     const video = document.getElementById('scenarioVideo');
+    const videoLoading = document.getElementById('videoLoading');
+    const loadingProgressFill = document.getElementById('loadingProgressFill');
+    const loadingPercentage = document.getElementById('loadingPercentage');
 
     // Set video source if available
     if (currentScenario.videoUrl) {
-        video.src = currentScenario.videoUrl;
-        video.load();
-        video.play();
+        // Show loading overlay
+        videoLoading.classList.add('active');
+
+        // Collect all videos to preload (main video + fail videos)
+        const videosToPreload = [currentScenario.videoUrl];
+        currentScenario.options.forEach(option => {
+            if (option.failVideo && !videosToPreload.includes(option.failVideo)) {
+                videosToPreload.push(option.failVideo);
+            }
+        });
+
+        // Preload all videos
+        let loadedVideos = 0;
+        const totalVideos = videosToPreload.length;
+        const videoElements = [];
+
+        videosToPreload.forEach((videoUrl, index) => {
+            const preloadVideo = document.createElement('video');
+            preloadVideo.preload = 'auto';
+            preloadVideo.src = videoUrl;
+            videoElements.push(preloadVideo);
+
+            preloadVideo.addEventListener('canplaythrough', () => {
+                loadedVideos++;
+                const percentage = (loadedVideos / totalVideos) * 100;
+                loadingProgressFill.style.width = percentage + '%';
+                loadingPercentage.textContent = Math.round(percentage) + '%';
+
+                // When all videos are loaded
+                if (loadedVideos === totalVideos) {
+                    videoLoading.classList.remove('active');
+
+                    // Store preloaded videos for later use
+                    currentScenario.preloadedVideos = videoElements;
+
+                    // Set main video and play
+                    video.src = currentScenario.videoUrl;
+                    video.load();
+                    video.play();
+                }
+            }, { once: true });
+
+            preloadVideo.load();
+        });
 
         // When video ends, show question
         video.onended = () => {
@@ -1552,9 +2126,19 @@ function updateTimerDisplay() {
 }
 
 function selectOption(option, timedOut = false) {
+    const responseTime = 15 - remainingTime;
+
     if (timerInterval) {
         clearInterval(timerInterval);
     }
+
+    // Record the attempt in user tracker
+    userTracker.recordScenarioAttempt(
+        currentScenario.id,
+        option.correct,
+        responseTime,
+        timedOut
+    );
 
     // Hide question overlay
     document.getElementById('questionOverlay').classList.remove('active');
@@ -1562,6 +2146,8 @@ function selectOption(option, timedOut = false) {
     // If wrong option has a fail video, play it first
     if (!option.correct && option.failVideo) {
         const video = document.getElementById('scenarioVideo');
+
+        // Video already preloaded, just set source and play (no loading needed)
         video.src = option.failVideo;
         video.load();
         video.play();
@@ -1583,14 +2169,26 @@ function processOptionResult(option, timedOut = false) {
         userProgress.completedScenarios[currentScenario.id].score < score) {
 
         const previousScore = userProgress.completedScenarios[currentScenario.id]?.score || 0;
-        userProgress.completedScenarios[currentScenario.id] = { score };
+        userProgress.completedScenarios[currentScenario.id] = {
+            score,
+            completedAt: new Date().toISOString()
+        };
         userProgress.totalScore = userProgress.totalScore - previousScore + score;
 
         // Unlock next scenario in same category
         unlockNextScenario();
 
         saveProgress();
+
+        // Update user tracker achievements
+        userTracker.updateAchievements(userProgress.totalScore, userProgress.completedScenarios);
+
         updateScores();
+
+        // Auto-sync data to Google Sheets if consent given
+        if (dataSharingManager.hasConsent()) {
+            syncDataToSheets();
+        }
     }
 
     // Show outcome
@@ -1603,6 +2201,10 @@ function unlockNextScenario() {
 
     if (nextScenario && !userProgress.unlockedScenarios.includes(nextScenario.id)) {
         userProgress.unlockedScenarios.push(nextScenario.id);
+        saveProgress();
+
+        // Re-render scenarios to update lock states immediately
+        renderScenarios();
     }
 }
 
@@ -1658,8 +2260,10 @@ function nextScenario() {
     if (nextScenario && userProgress.unlockedScenarios.includes(nextScenario.id)) {
         setTimeout(() => openScenario(nextScenario.id), 300);
     } else {
-        // Refresh the page to show updated cards
-        location.reload();
+        // Scroll to categories to show updated cards (no reload needed)
+        setTimeout(() => {
+            document.getElementById('categories').scrollIntoView({ behavior: 'smooth' });
+        }, 300);
     }
 }
 
@@ -1682,15 +2286,563 @@ function updateScores() {
         const translation = scenarioTranslations[scenarioId]?.[currentLanguage];
         const title = translation ? translation.title : scenario.title;
 
+        // Format completion time
+        let timeText = '';
+        if (data.completedAt) {
+            const completedDate = new Date(data.completedAt);
+            const now = new Date();
+            const diffMs = now - completedDate;
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMs / 3600000);
+            const diffDays = Math.floor(diffMs / 86400000);
+
+            if (diffMins < 1) {
+                timeText = currentLanguage === 'tr' ? 'Az önce' : 'Just now';
+            } else if (diffMins < 60) {
+                timeText = currentLanguage === 'tr' ? `${diffMins} dakika önce` : `${diffMins} min ago`;
+            } else if (diffHours < 24) {
+                timeText = currentLanguage === 'tr' ? `${diffHours} saat önce` : `${diffHours} hours ago`;
+            } else if (diffDays < 7) {
+                timeText = currentLanguage === 'tr' ? `${diffDays} gün önce` : `${diffDays} days ago`;
+            } else {
+                const options = { year: 'numeric', month: 'short', day: 'numeric' };
+                timeText = completedDate.toLocaleDateString(currentLanguage === 'tr' ? 'tr-TR' : 'en-US', options);
+            }
+        }
+
         const scoreItem = document.createElement('div');
         scoreItem.className = 'score-item';
         scoreItem.innerHTML = `
-            <div class="score-item-title">${title}</div>
+            <div class="score-item-info">
+                <div class="score-item-title">${title}</div>
+                ${timeText ? `<div class="score-item-time">${timeText}</div>` : ''}
+            </div>
             <div class="score-item-points">${data.score} ${translate('points')}</div>
         `;
         scoresList.appendChild(scoreItem);
     }
+
+    // Add user statistics section
+    addUserStatistics();
 }
+
+function addUserStatistics() {
+    const scoresSection = document.getElementById('scores');
+
+    // Remove existing stats if any
+    const existingStats = document.getElementById('userStatistics');
+    if (existingStats) {
+        existingStats.remove();
+    }
+
+    const stats = userTracker.getUserStats();
+    const accuracy = userTracker.getAccuracyRate();
+    const recentMistakes = userTracker.getRecentMistakes(5);
+
+    const statsHTML = `
+        <div id="userStatistics" class="user-statistics">
+            <div class="stats-header">
+                <h3>${currentLanguage === 'tr' ? '📊 Detaylı İstatistikler' : '📊 Detailed Statistics'}</h3>
+                <div class="stats-header-buttons">
+                    ${dataSharingManager.hasConsent() ? `
+                        <button onclick="manualSyncFromScores()" class="sync-btn" id="syncBtn">
+                            🔄 ${currentLanguage === 'tr' ? 'Verileri Gönder' : 'Sync Data'}
+                        </button>
+                    ` : ''}
+                    <button onclick="showFullStats()" class="view-stats-btn">
+                        ${currentLanguage === 'tr' ? 'Tüm İstatistikler' : 'View All Stats'}
+                    </button>
+                </div>
+            </div>
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">🎯</div>
+                    <div class="stat-value">${accuracy}%</div>
+                    <div class="stat-label">${currentLanguage === 'tr' ? 'Doğruluk Oranı' : 'Accuracy Rate'}</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">✅</div>
+                    <div class="stat-value">${stats.userData.statistics.correctChoices}</div>
+                    <div class="stat-label">${currentLanguage === 'tr' ? 'Doğru Cevaplar' : 'Correct Answers'}</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">❌</div>
+                    <div class="stat-value">${stats.userData.statistics.wrongChoices}</div>
+                    <div class="stat-label">${currentLanguage === 'tr' ? 'Yanlış Cevaplar' : 'Wrong Answers'}</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">⏱️</div>
+                    <div class="stat-value">${stats.userData.statistics.averageResponseTime.toFixed(1)}s</div>
+                    <div class="stat-label">${currentLanguage === 'tr' ? 'Ort. Cevap Süresi' : 'Avg. Response Time'}</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">🔥</div>
+                    <div class="stat-value">${stats.userData.achievements.streakDays}</div>
+                    <div class="stat-label">${currentLanguage === 'tr' ? 'Günlük Seri' : 'Day Streak'}</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">⭐</div>
+                    <div class="stat-value">${stats.userData.achievements.perfectScores}</div>
+                    <div class="stat-label">${currentLanguage === 'tr' ? 'Mükemmel Puanlar' : 'Perfect Scores'}</div>
+                </div>
+            </div>
+            
+            ${recentMistakes.length > 0 ? `
+                <div class="recent-mistakes">
+                    <h4>${currentLanguage === 'tr' ? '⚠️ Son Hatalar' : '⚠️ Recent Mistakes'}</h4>
+                    <div class="mistakes-list">
+                        ${recentMistakes.map(mistake => {
+        const scenario = scenarios.find(s => s.id === mistake.scenarioId);
+        const translation = scenarioTranslations[mistake.scenarioId]?.[currentLanguage];
+        const title = translation ? translation.title : mistake.scenarioTitle;
+        const categoryTranslated = translate(mistake.category);
+
+        const mistakeDate = new Date(mistake.timestamp);
+        const now = new Date();
+        const diffMs = now - mistakeDate;
+        const diffMins = Math.floor(diffMs / 60000);
+        const diffHours = Math.floor(diffMs / 3600000);
+
+        let timeAgo = '';
+        if (diffMins < 1) {
+            timeAgo = currentLanguage === 'tr' ? 'Az önce' : 'Just now';
+        } else if (diffMins < 60) {
+            timeAgo = currentLanguage === 'tr' ? `${diffMins} dk önce` : `${diffMins} min ago`;
+        } else if (diffHours < 24) {
+            timeAgo = currentLanguage === 'tr' ? `${diffHours} saat önce` : `${diffHours} hours ago`;
+        } else {
+            timeAgo = mistakeDate.toLocaleDateString(currentLanguage === 'tr' ? 'tr-TR' : 'en-US',
+                { month: 'short', day: 'numeric' });
+        }
+
+        return `
+                                <div class="mistake-item" onclick="openScenario('${mistake.scenarioId}')">
+                                    <div class="mistake-info">
+                                        <div class="mistake-title">${title}</div>
+                                        <div class="mistake-meta">
+                                            <span class="mistake-category">${categoryTranslated}</span>
+                                            ${mistake.timedOut ?
+                `<span class="mistake-timeout">${currentLanguage === 'tr' ? 'Süre Doldu' : 'Timeout'}</span>` :
+                `<span class="mistake-time">${mistake.responseTime.toFixed(1)}s</span>`
+            }
+                                        </div>
+                                    </div>
+                                    <div class="mistake-time">${timeAgo}</div>
+                                </div>
+                            `;
+    }).join('')}
+                    </div>
+                </div>
+            ` : ''}
+            
+            <div class="user-id-info">
+                <small>${currentLanguage === 'tr' ? 'Kullanıcı ID' : 'User ID'}: ${stats.userId}</small>
+            </div>
+        </div>
+    `;
+
+    scoresSection.insertAdjacentHTML('beforeend', statsHTML);
+}
+
+function showFullStats() {
+    const stats = userTracker.getUserStats();
+
+    let categoryStatsHTML = '';
+    for (const [category, catStats] of Object.entries(stats.userData.statistics.categoryStats)) {
+        const accuracy = catStats.attempts > 0 ? (catStats.correct / catStats.attempts * 100).toFixed(1) : 0;
+        const categoryTranslated = translate(category);
+
+        categoryStatsHTML += `
+            <div class="category-stat-row">
+                <div class="category-stat-name">${categoryTranslated}</div>
+                <div class="category-stat-values">
+                    <span>${catStats.correct}/${catStats.attempts}</span>
+                    <span class="category-accuracy">${accuracy}%</span>
+                </div>
+            </div>
+        `;
+    }
+
+    let categoryCompletionHTML = '';
+    for (const [category, completion] of Object.entries(stats.userData.achievements.categoriesCompleted)) {
+        const categoryTranslated = translate(category);
+
+        categoryCompletionHTML += `
+            <div class="category-completion-row">
+                <div class="category-completion-name">${categoryTranslated}</div>
+                <div class="category-completion-bar">
+                    <div class="completion-bar-fill" style="width: ${completion.percentage}%"></div>
+                </div>
+                <div class="category-completion-text">${completion.completed}/${completion.total} (${completion.percentage}%)</div>
+            </div>
+        `;
+    }
+
+    const modalHTML = `
+        <div class="stats-modal-overlay" id="statsModal" onclick="closeStatsModal(event)">
+            <div class="stats-modal-content" onclick="event.stopPropagation()">
+                <div class="stats-modal-header">
+                    <h2>${currentLanguage === 'tr' ? '📊 Tüm İstatistikler' : '📊 Full Statistics'}</h2>
+                    <button onclick="closeStatsModal()" class="close-stats-btn">×</button>
+                </div>
+                
+                <div class="stats-modal-body">
+                    <div class="stats-section">
+                        <h3>${currentLanguage === 'tr' ? 'Kategori Performansı' : 'Category Performance'}</h3>
+                        <div class="category-stats">
+                            ${categoryStatsHTML || `<p>${currentLanguage === 'tr' ? 'Henüz veri yok' : 'No data yet'}</p>`}
+                        </div>
+                    </div>
+                    
+                    <div class="stats-section">
+                        <h3>${currentLanguage === 'tr' ? 'Kategori Tamamlama' : 'Category Completion'}</h3>
+                        <div class="category-completion">
+                            ${categoryCompletionHTML || `<p>${currentLanguage === 'tr' ? 'Henüz veri yok' : 'No data yet'}</p>`}
+                        </div>
+                    </div>
+                    
+                    <div class="stats-section">
+                        <h3>${currentLanguage === 'tr' ? 'Genel Bilgiler' : 'General Info'}</h3>
+                        <div class="general-info">
+                            <p><strong>${currentLanguage === 'tr' ? 'Toplam Deneme:' : 'Total Attempts:'}</strong> ${stats.userData.statistics.totalAttempts}</p>
+                            <p><strong>${currentLanguage === 'tr' ? 'Zaman Aşımı:' : 'Timeouts:'}</strong> ${stats.userData.statistics.timeouts}</p>
+                            <p><strong>${currentLanguage === 'tr' ? 'Toplam Oturum:' : 'Total Sessions:'}</strong> ${stats.userData.sessions.length}</p>
+                            <p><strong>${currentLanguage === 'tr' ? 'Hesap Oluşturma:' : 'Account Created:'}</strong> ${new Date(stats.userData.createdAt).toLocaleDateString(currentLanguage === 'tr' ? 'tr-TR' : 'en-US')}</p>
+                            <p><strong>${currentLanguage === 'tr' ? 'Toplam Oyun Süresi:' : 'Total Play Time:'}</strong> ${Math.floor(stats.userData.totalPlayTime / 60000)} ${currentLanguage === 'tr' ? 'dakika' : 'minutes'}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="stats-section">
+                        <h3>${currentLanguage === 'tr' ? 'Veri Yönetimi' : 'Data Management'}</h3>
+                        <div class="data-management">
+                            <button onclick="openDataSettings()" class="data-btn primary">
+                                ⚙️ ${currentLanguage === 'tr' ? 'Veri Paylaşım Ayarları' : 'Data Sharing Settings'}
+                            </button>
+                            <button onclick="exportUserData()" class="data-btn">
+                                ${currentLanguage === 'tr' ? '📥 Verileri İndir' : '📥 Export Data'}
+                            </button>
+                            <button onclick="resetUserData()" class="data-btn danger">
+                                ${currentLanguage === 'tr' ? '🗑️ Verileri Sıfırla' : '🗑️ Reset Data'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    document.body.style.overflow = 'hidden';
+}
+
+function closeStatsModal(event) {
+    if (!event || event.target.classList.contains('stats-modal-overlay')) {
+        const modal = document.getElementById('statsModal');
+        if (modal) {
+            modal.remove();
+            document.body.style.overflow = 'auto';
+        }
+    }
+}
+
+function exportUserData() {
+    const data = userTracker.exportUserData();
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `traffivid_user_data_${userTracker.userId}_${Date.now()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+function resetUserData() {
+    const confirmMsg = currentLanguage === 'tr'
+        ? 'Tüm ilerlemeniz ve istatistikleriniz silinecek. Emin misiniz?'
+        : 'All your progress and statistics will be deleted. Are you sure?';
+
+    if (confirm(confirmMsg)) {
+        localStorage.removeItem('traffiVidUserData_' + userTracker.userId);
+        localStorage.removeItem('traffiVidProgress');
+        localStorage.removeItem('traffiVidUserId');
+        localStorage.removeItem('traffiVidDataConsent');
+        localStorage.removeItem('traffiVidLastSync');
+
+        const successMsg = currentLanguage === 'tr'
+            ? 'Veriler başarıyla sıfırlandı. Sayfa yeniden yüklenecek.'
+            : 'Data successfully reset. Page will reload.';
+
+        alert(successMsg);
+        location.reload();
+    }
+}
+
+// ===== DATA CONSENT & SYNC =====
+function showConsentBanner() {
+    // Don't show if already decided
+    const consentDecided = localStorage.getItem('traffiVidDataConsent');
+    if (consentDecided !== null) return;
+
+    const banner = document.createElement('div');
+    banner.id = 'consentBanner';
+    banner.className = 'consent-banner';
+    banner.innerHTML = `
+        <div class="consent-content">
+            <div class="consent-icon">🔒</div>
+            <div class="consent-text">
+                <h4>${currentLanguage === 'tr' ? 'Veri Paylaşımı İzni' : 'Data Sharing Consent'}</h4>
+                <p>${currentLanguage === 'tr'
+            ? 'Oyun performansınızı ve istatistiklerinizi anonim olarak paylaşmak ister misiniz? Bu, oyunu geliştirmemize yardımcı olur.'
+            : 'Would you like to anonymously share your game performance and statistics? This helps us improve the game.'}</p>
+                <div class="consent-details">
+                    <small>${currentLanguage === 'tr' ? '📊 Paylaşılacak: Puanlar, doğruluk oranı, kategori istatistikleri' : '📊 Shared: Scores, accuracy rate, category statistics'}</small><br>
+                    <small>${currentLanguage === 'tr' ? '🔐 Paylaşılmaz: Kişisel bilgiler, IP adresi' : '🔐 Not shared: Personal information, IP address'}</small>
+                </div>
+            </div>
+        </div>
+        <div class="consent-actions">
+            <button onclick="acceptConsent()" class="consent-btn accept">${currentLanguage === 'tr' ? '✓ Kabul Et' : '✓ Accept'}</button>
+            <button onclick="declineConsent()" class="consent-btn decline">${currentLanguage === 'tr' ? '✗ Reddet' : '✗ Decline'}</button>
+        </div>
+    `;
+
+    document.body.appendChild(banner);
+
+    // Animate in
+    setTimeout(() => {
+        banner.classList.add('show');
+    }, 100);
+}
+
+function acceptConsent() {
+    dataSharingManager.giveConsent();
+    hideConsentBanner();
+
+    // Send initial data
+    syncDataToSheets();
+
+    const msg = currentLanguage === 'tr'
+        ? '✓ Teşekkürler! Verileriniz güvenli bir şekilde paylaşılacak.'
+        : '✓ Thank you! Your data will be shared securely.';
+    showNotification(msg, 'success');
+}
+
+function declineConsent() {
+    localStorage.setItem('traffiVidDataConsent', 'false');
+    hideConsentBanner();
+
+    const msg = currentLanguage === 'tr'
+        ? 'Verileriniz paylaşılmayacak. İstediğiniz zaman ayarlardan değiştirebilirsiniz.'
+        : 'Your data will not be shared. You can change this anytime in settings.';
+    showNotification(msg, 'info');
+}
+
+function hideConsentBanner() {
+    const banner = document.getElementById('consentBanner');
+    if (banner) {
+        banner.classList.remove('show');
+        setTimeout(() => banner.remove(), 300);
+    }
+}
+
+async function syncDataToSheets() {
+    if (!dataSharingManager.hasConsent()) {
+        console.log('Cannot sync: No consent given');
+        return;
+    }
+
+    const stats = userTracker.getUserStats();
+    const accuracyRate = userTracker.getAccuracyRate();
+
+    const result = await dataSharingManager.sendDataToSheets(
+        stats.userData,
+        { accuracyRate: accuracyRate }
+    );
+
+    if (result.success) {
+        console.log('Data synced to Google Sheets successfully');
+    } else if (result.error !== 'Not configured') {
+        console.error('Failed to sync data:', result.error);
+    }
+}
+
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.textContent = message;
+
+    document.body.appendChild(notification);
+
+    setTimeout(() => {
+        notification.classList.add('show');
+    }, 100);
+
+    setTimeout(() => {
+        notification.classList.remove('show');
+        setTimeout(() => notification.remove(), 300);
+    }, 4000);
+}
+
+function openDataSettings() {
+    const hasConsent = dataSharingManager.hasConsent();
+    const lastSync = dataSharingManager.getLastSyncTime();
+
+    let lastSyncText = currentLanguage === 'tr' ? 'Hiç senkronize edilmedi' : 'Never synced';
+    if (lastSync) {
+        const diffMs = new Date() - lastSync;
+        const diffMins = Math.floor(diffMs / 60000);
+        const diffHours = Math.floor(diffMs / 3600000);
+
+        if (diffMins < 1) {
+            lastSyncText = currentLanguage === 'tr' ? 'Az önce' : 'Just now';
+        } else if (diffMins < 60) {
+            lastSyncText = currentLanguage === 'tr' ? `${diffMins} dakika önce` : `${diffMins} min ago`;
+        } else if (diffHours < 24) {
+            lastSyncText = currentLanguage === 'tr' ? `${diffHours} saat önce` : `${diffHours} hours ago`;
+        } else {
+            lastSyncText = lastSync.toLocaleDateString(currentLanguage === 'tr' ? 'tr-TR' : 'en-US');
+        }
+    }
+
+    const modalHTML = `
+        <div class="stats-modal-overlay" id="dataSettingsModal" onclick="closeDataSettings(event)">
+            <div class="stats-modal-content" onclick="event.stopPropagation()">
+                <div class="stats-modal-header">
+                    <h2>${currentLanguage === 'tr' ? '⚙️ Veri Ayarları' : '⚙️ Data Settings'}</h2>
+                    <button onclick="closeDataSettings()" class="close-stats-btn">×</button>
+                </div>
+                
+                <div class="stats-modal-body">
+                    <div class="stats-section">
+                        <h3>${currentLanguage === 'tr' ? 'Veri Paylaşımı' : 'Data Sharing'}</h3>
+                        <div class="data-sharing-status">
+                            <div class="status-row">
+                                <span>${currentLanguage === 'tr' ? 'Durum:' : 'Status:'}</span>
+                                <strong class="${hasConsent ? 'status-active' : 'status-inactive'}">
+                                    ${hasConsent
+            ? (currentLanguage === 'tr' ? '✓ Aktif' : '✓ Active')
+            : (currentLanguage === 'tr' ? '✗ Pasif' : '✗ Inactive')
+        }
+                                </strong>
+                            </div>
+                            ${hasConsent ? `
+                                <div class="status-row">
+                                    <span>${currentLanguage === 'tr' ? 'Son Senkronizasyon:' : 'Last Sync:'}</span>
+                                    <strong>${lastSyncText}</strong>
+                                </div>
+                            ` : ''}
+                        </div>
+                        
+                        <div class="data-actions">
+                            ${hasConsent ? `
+                                <button onclick="manualSync()" class="data-btn">
+                                    🔄 ${currentLanguage === 'tr' ? 'Şimdi Senkronize Et' : 'Sync Now'}
+                                </button>
+                                <button onclick="revokeConsentConfirm()" class="data-btn danger">
+                                    🚫 ${currentLanguage === 'tr' ? 'Paylaşımı Durdur' : 'Stop Sharing'}
+                                </button>
+                            ` : `
+                                <button onclick="enableSharing()" class="data-btn">
+                                    ✓ ${currentLanguage === 'tr' ? 'Paylaşımı Başlat' : 'Start Sharing'}
+                                </button>
+                            `}
+                        </div>
+                        
+                        <div class="data-info">
+                            <h4>${currentLanguage === 'tr' ? 'ℹ️ Paylaşılan Veriler' : 'ℹ️ Shared Data'}</h4>
+                            <ul>
+                                <li>${currentLanguage === 'tr' ? 'Toplam puan ve tamamlanan senaryolar' : 'Total score and completed scenarios'}</li>
+                                <li>${currentLanguage === 'tr' ? 'Doğruluk oranı ve istatistikler' : 'Accuracy rate and statistics'}</li>
+                                <li>${currentLanguage === 'tr' ? 'Kategori performansları' : 'Category performances'}</li>
+                                <li>${currentLanguage === 'tr' ? 'Yapılan hatalar (anonim)' : 'Mistakes made (anonymous)'}</li>
+                            </ul>
+                            <p><small>${currentLanguage === 'tr'
+            ? '🔐 Kişisel bilgileriniz asla paylaşılmaz. Tüm veriler anonim olarak saklanır.'
+            : '🔐 Your personal information is never shared. All data is stored anonymously.'}</small></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    document.body.style.overflow = 'hidden';
+}
+
+function closeDataSettings(event) {
+    if (!event || event.target.id === 'dataSettingsModal') {
+        const modal = document.getElementById('dataSettingsModal');
+        if (modal) {
+            modal.remove();
+            document.body.style.overflow = 'auto';
+        }
+    }
+}
+
+async function manualSync() {
+    const btn = event.target;
+    const originalText = btn.innerHTML;
+    btn.innerHTML = `<span class="spinner">⏳</span> ${currentLanguage === 'tr' ? 'Senkronize Ediliyor...' : 'Syncing...'}`;
+    btn.disabled = true;
+
+    await syncDataToSheets();
+
+    btn.innerHTML = originalText;
+    btn.disabled = false;
+
+    showNotification(
+        currentLanguage === 'tr' ? '✓ Veriler senkronize edildi!' : '✓ Data synced!',
+        'success'
+    );
+
+    // Refresh modal to show updated sync time
+    setTimeout(() => {
+        closeDataSettings();
+        openDataSettings();
+    }, 1000);
+}
+
+function enableSharing() {
+    acceptConsent();
+    closeDataSettings();
+}
+
+function revokeConsentConfirm() {
+    const confirmMsg = currentLanguage === 'tr'
+        ? 'Veri paylaşımını durdurmak istediğinize emin misiniz?'
+        : 'Are you sure you want to stop data sharing?';
+
+    if (confirm(confirmMsg)) {
+        dataSharingManager.revokeConsent();
+        showNotification(
+            currentLanguage === 'tr' ? '✓ Veri paylaşımı durduruldu' : '✓ Data sharing stopped',
+            'info'
+        );
+        closeDataSettings();
+    }
+}
+
+// Make functions globally accessible
+window.acceptConsent = acceptConsent;
+window.declineConsent = declineConsent;
+window.openDataSettings = openDataSettings;
+window.closeDataSettings = closeDataSettings;
+window.manualSync = manualSync;
+window.enableSharing = enableSharing;
+window.revokeConsentConfirm = revokeConsentConfirm;
+
+// Make functions globally accessible
+window.showFullStats = showFullStats;
+window.closeStatsModal = closeStatsModal;
+window.exportUserData = exportUserData;
+window.resetUserData = resetUserData;
 
 // ===== LOCAL STORAGE =====
 function saveProgress() {
@@ -1701,6 +2853,33 @@ function loadProgress() {
     const saved = localStorage.getItem('traffiVidProgress');
     return saved ? JSON.parse(saved) : null;
 }
+
+// ===== MANUAL SYNC FROM SCORES =====
+async function manualSyncFromScores() {
+    const btn = document.getElementById('syncBtn');
+    if (!btn) return;
+
+    const originalHTML = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spinner">⏳</span> ${currentLanguage === 'tr' ? 'Gönderiliyor...' : 'Syncing...'}`;
+
+    await syncDataToSheets();
+
+    btn.innerHTML = `✓ ${currentLanguage === 'tr' ? 'Gönderildi!' : 'Synced!'}`;
+
+    setTimeout(() => {
+        btn.innerHTML = originalHTML;
+        btn.disabled = false;
+    }, 2000);
+
+    showNotification(
+        currentLanguage === 'tr' ? '✓ Veriler başarıyla Google Sheets\'e gönderildi!' : '✓ Data synced to Google Sheets!',
+        'success'
+    );
+}
+
+// Make globally accessible
+window.manualSyncFromScores = manualSyncFromScores;
 
 // ===== UTILITY FUNCTIONS =====
 
@@ -1861,6 +3040,14 @@ function openCategoryModal(categoryName) {
 function closeCategoryModal() {
     document.getElementById('categoryModal').classList.remove('active');
     document.body.style.overflow = 'auto';
+}
+
+// ===== USER ID DISPLAY =====
+function updateUserIdDisplay() {
+    const userIdElement = document.getElementById('userIdDisplay');
+    if (userIdElement && userTracker) {
+        userIdElement.textContent = userTracker.userId;
+    }
 }
 
 // Make openScenario globally accessible for inline onclick

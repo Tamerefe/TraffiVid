@@ -4,6 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' https: data:; media-src 'self' blob: data:; connect-src 'self' https://script.google.com https://cdnjs.cloudflare.com;">
     <title>TraffiVid - Trafik Güvenliği Senaryo Oyunu</title>
     <link rel="icon" type="image/png" href="icon.ico">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -52,7 +54,12 @@
                 </div>
                 <div class="user-profile">
                     <span class="user-icon">👤</span>
-                    <span class="user-tooltip" data-i18n="guest">Misafir</span>
+                    <div class="user-dropdown">
+                        <div class="user-info">
+                            <span class="user-label" data-i18n="guest">Misafir</span>
+                            <span class="user-id-display" id="userIdDisplay">user_xxxxx</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -195,6 +202,16 @@
                     </div>
                 </div>
 
+                <!-- Video Loading Progress Bar -->
+                <div class="video-loading" id="videoLoading">
+                    <div class="loading-spinner"></div>
+                    <div class="loading-text" data-i18n="loading_video">Video yükleniyor...</div>
+                    <div class="loading-progress-bar">
+                        <div class="loading-progress-fill" id="loadingProgressFill"></div>
+                    </div>
+                    <div class="loading-percentage" id="loadingPercentage">0%</div>
+                </div>
+
                 <video id="scenarioVideo"
                     poster="https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=1200&h=675&fit=crop">
                     <source src="" type="video/mp4">
@@ -237,6 +254,8 @@
         </div>
     </div>
 
+    <!-- DOMPurify for XSS Protection -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
     <script src="app.js"></script>
 </body>
 
