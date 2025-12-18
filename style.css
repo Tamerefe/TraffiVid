@@ -1383,66 +1383,164 @@ input:checked+.slider:before {
         font-size: 1rem;
     }
 
+    /* MOBİL VIDEO VE MODAL İYİLEŞTİRMELERİ */
     .modal-content {
-        padding: 1rem;
+        padding: 0;
         margin: 0;
         width: 100%;
         height: 100vh;
         border-radius: 0;
+        display: flex;
+        flex-direction: column;
     }
 
     .scenario-header {
-        padding: 1rem;
+        padding: 0.8rem 1rem;
+        flex-wrap: wrap;
+        gap: 0.5rem;
     }
 
     .scenario-header h2 {
-        font-size: 1.5rem;
+        font-size: 1.1rem;
+        margin-bottom: 0;
     }
 
+    .scenario-meta {
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .scenario-meta > * {
+        font-size: 0.75rem;
+        padding: 0.2rem 0.5rem;
+    }
+
+    /* Video Container - Mobilde daha fazla alan */
     .video-container {
-        max-height: 50vh;
+        flex: 1;
+        max-height: none;
+        min-height: 40vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #000;
     }
 
     #scenarioVideo {
-        max-height: 50vh;
+        width: 100%;
+        height: 100%;
+        max-height: none;
         object-fit: contain;
     }
 
+    /* Soru Overlay - Mobil optimize ve ortalanmış */
     .question-overlay,
     .outcome-overlay {
-        padding: 1.5rem;
+        padding: 1rem;
+        align-items: center;
+        justify-content: center;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
     }
 
+    /* Timer - Mobilde daha küçük (scale ile) */
+    .timer-container {
+        margin-bottom: 1.5rem;
+        transform: scale(0.75);
+        transform-origin: center;
+    }
+
+    .timer-text {
+        font-size: 2.2rem;
+    }
+
+    /* Soru İçeriği - Ortalanmış */
     .question-content,
     .outcome-content {
         max-width: 100%;
-        padding: 2rem 1.5rem;
+        padding: 0 1rem;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
     }
 
     .question-content h3 {
-        font-size: 1.2rem;
+        font-size: 1rem;
+        line-height: 1.4;
         margin-bottom: 1.5rem;
+        text-align: center;
+        width: 100%;
     }
 
+    /* Seçenekler - Ortalanmış ve touch-friendly */
     .options-container {
-        gap: 1rem;
+        gap: 0.8rem;
+        width: 100%;
+        max-width: 500px;
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
     }
 
     .option-btn {
-        font-size: 0.95rem;
+        font-size: 0.9rem;
         padding: 1rem;
-        min-height: 60px;
-        -webkit-tap-highlight-color: transparent;
+        min-height: 54px;
+        line-height: 1.4;
+        text-align: center;
+        -webkit-tap-highlight-color: rgba(229, 9, 20, 0.2);
+        touch-action: manipulation;
+        word-break: break-word;
+    }
+
+    .option-btn:active {
+        transform: scale(0.98);
+    }
+
+    /* Sonuç Overlay */
+    .outcome-content {
+        text-align: center;
+        padding: 1rem;
+    }
+
+    .outcome-icon {
+        font-size: 3.5rem;
+        margin-bottom: 1rem;
     }
 
     .outcome-content h3 {
-        font-size: 1.8rem;
+        font-size: 1.4rem;
+        margin-bottom: 1rem;
+        line-height: 1.2;
     }
 
     .outcome-content p {
+        font-size: 0.9rem;
+        line-height: 1.5;
+        margin-bottom: 1.5rem;
+    }
+
+    .outcome-score {
+        font-size: 1.3rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .outcome-actions {
+        flex-direction: column;
+        gap: 0.8rem;
+        width: 100%;
+    }
+
+    .outcome-actions button {
+        width: 100%;
+        min-width: auto;
+        padding: 0.9rem;
         font-size: 0.95rem;
     }
 
+    /* Scores Section */
     .scores-section {
         padding: 2rem 1.5rem;
     }
@@ -1454,6 +1552,21 @@ input:checked+.slider:before {
 
     .score-card {
         width: 100%;
+    }
+
+    /* Modal Close Button - Mobilde daha erişilebilir */
+    .modal-close {
+        top: 0.5rem;
+        right: 0.5rem;
+        font-size: 2.5rem;
+        width: 44px;
+        height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0, 0, 0, 0.6);
+        border-radius: 50%;
+        z-index: 1001;
     }
 }
 
@@ -1582,44 +1695,104 @@ input:checked+.slider:before {
         width: 100%;
     }
 
+    /* KÜÇÜK MOBİL İÇİN EK İYİLEŞTİRMELER */
     .modal-content {
-        padding: 0.5rem;
+        padding: 0;
     }
 
-    .close-modal {
-        width: 35px;
-        height: 35px;
-        font-size: 1.5rem;
-    }
-
-    .question-content h3 {
-        font-size: 1.1rem;
-    }
-
-    .option-btn {
-        font-size: 0.9rem;
-        padding: 0.9rem;
-        min-height: 55px;
-    }
-
-    .timer {
-        font-size: 1.5rem;
-        width: 60px;
-        height: 60px;
-    }
-
-    .outcome-content h3 {
-        font-size: 1.5rem;
-    }
-
-    .outcome-content p {
-        font-size: 0.9rem;
-    }
-
-    .outcome-score {
+    .modal-close {
+        top: 0.3rem;
+        right: 0.3rem;
+        width: 40px;
+        height: 40px;
         font-size: 2rem;
     }
 
+    .scenario-header {
+        padding: 0.5rem 0.8rem;
+    }
+
+    .scenario-header h2 {
+        font-size: 0.95rem;
+    }
+
+    .scenario-meta {
+        font-size: 0.7rem;
+    }
+
+    /* Video - Tam ekran yaklaşımı */
+    .video-container {
+        min-height: 35vh;
+    }
+
+    /* Timer - Daha da küçük (scale ile) */
+    .timer-container {
+        transform: scale(0.65);
+        transform-origin: center;
+        margin-bottom: 1rem;
+    }
+
+    .timer-text {
+        font-size: 2rem;
+    }
+
+    /* Sorular - Kompakt ve ortalanmış */
+    .question-content {
+        padding: 0 0.8rem;
+    }
+
+    .question-content h3 {
+        font-size: 0.9rem;
+        line-height: 1.3;
+        margin-bottom: 1rem;
+        text-align: center;
+    }
+
+    .options-container {
+        gap: 0.7rem;
+        max-width: 100%;
+    }
+
+    .option-btn {
+        font-size: 0.85rem;
+        padding: 0.9rem;
+        min-height: 52px;
+        line-height: 1.3;
+        text-align: center;
+    }
+
+    /* Sonuç - Kompakt */
+    .outcome-icon {
+        font-size: 3rem;
+        margin-bottom: 0.8rem;
+    }
+
+    .outcome-content h3 {
+        font-size: 1.2rem;
+        margin-bottom: 0.8rem;
+    }
+
+    .outcome-content p {
+        font-size: 0.85rem;
+        line-height: 1.4;
+        margin-bottom: 1rem;
+    }
+
+    .outcome-score {
+        font-size: 1.2rem;
+        margin-bottom: 1rem;
+    }
+
+    .outcome-actions {
+        gap: 0.6rem;
+    }
+
+    .outcome-actions button {
+        padding: 0.8rem;
+        font-size: 0.9rem;
+    }
+
+    /* Diğer */
     .total-score,
     .completed-scenarios {
         display: block;
@@ -2291,5 +2464,57 @@ input:checked+.slider:before {
 
     .data-actions {
         flex-direction: column;
+    }
+}
+
+/* ===== FOOTER STYLES ===== */
+.footer {
+    background-color: var(--dark-gray);
+    padding: 1rem 1.5rem;
+    margin-top: 2rem;
+    border-top: 1px solid var(--medium-gray);
+}
+
+.footer-content {
+    max-width: 1400px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+.developer-info {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    line-height: 1.8;
+}
+
+.developer-info strong {
+    color: var(--text-primary);
+    font-size: 1.1rem;
+}
+
+.developer-info a {
+    color: var(--primary-color);
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.developer-info a:hover {
+    color: #f6121d;
+    text-decoration: underline;
+}
+
+/* Responsive Footer */
+@media (max-width: 768px) {
+    .footer {
+        padding: 0.75rem 0.75rem;
+        margin-top: 1rem;
+    }
+
+    .developer-info {
+        font-size: 0.9rem;
+    }
+
+    .developer-info strong {
+        font-size: 1rem;
     }
 }

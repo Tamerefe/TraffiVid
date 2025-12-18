@@ -6,7 +6,8 @@
 const CONFIG = {
     // Base64 encoded Google Sheets URL (casual kullanıcılar göremez)
     // Decode: atob('aHR0cHM6Ly9zY3J...')
-    _enc: 'aHR0cHM6Ly9zY3JpcHQuZ29vZ2xlLmNvbS9tYWNyb3Mvcy9BS2Z5Y2J4b2pTR2VrQjJlQ01ORXBfdGxlclBQT3RNQ0RTb3RrY0FSbFNrcHVVZkd6VFlHbzZ5SXRkaTBsQjVqQjNYWW9VX0YvZXhlYw==',
+    // Updated: 2025-12-18 23:28 - New deployment v2.0
+    _enc: 'aHR0cHM6Ly9zY3JpcHQuZ29vZ2xlLmNvbS9tYWNyb3Mvcy9BS2Z5Y2J3aU1CTlhlQVh2cGNxYTdjbERKN1NrVzh4aEwzRERlY2pLc1ZRRmdMeVBqcWZaNFNERWVCUjNTclgwd2FEYm5rMC9leGVj',
     ENABLE_DATA_SHARING: true,
     MAX_REQUESTS_PER_MINUTE: 10,
     ENCRYPTION_ENABLED: true,
@@ -43,7 +44,9 @@ class SecurityHelper {
             for (let i = 0; i < text.length; i++) {
                 encrypted += String.fromCharCode(text.charCodeAt(i) ^ key.charCodeAt(i % key.length));
             }
-            return btoa(encrypted); // Base64 encode
+            // Unicode karakterleri için güvenli Base64 encoding
+            return btoa(encodeURIComponent(encrypted).replace(/%([0-9A-F]{2})/g,
+                (match, p1) => String.fromCharCode('0x' + p1)));
         } catch (e) {
             console.error('Encryption failed:', e);
             return text;
@@ -61,9 +64,12 @@ class SecurityHelper {
                 console.warn('Unencrypted data detected, returning as-is');
                 return encryptedText;
             }
-
+            
+            // Unicode-safe Base64 decoding
             const key = this.getEncryptionKey();
-            const decrypted = atob(encryptedText); // Base64 decode
+            const decoded = atob(encryptedText);
+            const decrypted = decodeURIComponent(Array.prototype.map.call(decoded, 
+                c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
             let original = '';
             for (let i = 0; i < decrypted.length; i++) {
                 original += String.fromCharCode(decrypted.charCodeAt(i) ^ key.charCodeAt(i % key.length));
@@ -134,12 +140,13 @@ class SecurityHelper {
         return true;
     }
 }
-
-// ===== DATA SHARING SYSTEM =====
 class DataSharingManager {
     constructor() {
         this.consentGiven = localStorage.getItem('traffiVidDataConsent') === 'true';
         this.lastSyncTime = localStorage.getItem('traffiVidLastSync');
+        console.log('🔐 DataSharingManager başlatıldı');
+        console.log('   Consent durumu:', this.consentGiven ? '✅ Verildi' : '❌ Verilmedi');
+        console.log('   Son senkronizasyon:', this.lastSyncTime || 'Henüz yapılmadı');
     }
 
     hasConsent() {
@@ -158,58 +165,104 @@ class DataSharingManager {
     }
 
     async sendDataToSheets(userData, statistics) {
+        console.log('📤 sendDataToSheets çağrıldı');
+        console.log('Consent:', this.consentGiven);
+        console.log('URL:', CONFIG.GOOGLE_SHEETS_URL ? 'Var' : 'Yok');
+        console.log('Enable:', CONFIG.ENABLE_DATA_SHARING);
+        
         if (!this.consentGiven) {
-            console.log('Data sharing consent not given');
+            console.warn('❌ Data sharing consent not given');
             return { success: false, error: 'No consent' };
         }
 
         if (!CONFIG.GOOGLE_SHEETS_URL || CONFIG.GOOGLE_SHEETS_URL === '') {
-            console.warn('Google Sheets URL not configured');
+            console.warn('❌ Google Sheets URL not configured');
             return { success: false, error: 'Not configured' };
         }
 
         if (!CONFIG.ENABLE_DATA_SHARING) {
-            console.warn('Data sharing is disabled in config');
+            console.warn('❌ Data sharing is disabled in config');
             return { success: false, error: 'Disabled' };
         }
 
         // Rate limiting kontrolü
         if (!SecurityHelper.checkRateLimit('dataSharing')) {
+            console.warn('❌ Rate limit exceeded');
             return { success: false, error: 'Rate limit exceeded' };
         }
 
+        console.log('✅ Tüm kontroller geçildi, veri gönderiliyor...');
         try {
+            // Format date for better readability in Google Sheets
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('tr-TR');
+            const timeStr = now.toLocaleTimeString('tr-TR');
+            
+            // Calculate category statistics for easier reading
+            const categoryStats = userData.statistics.categoryStats || {};
+            const categories = Object.keys(categoryStats);
+            
+            // Flatten category stats for individual columns
+            const categoryData = {};
+            categories.forEach(cat => {
+                const stats = categoryStats[cat] || { correct: 0, wrong: 0, total: 0 };
+                const accuracy = stats.total > 0 ? ((stats.correct / stats.total) * 100).toFixed(1) : '0';
+                categoryData[`${cat}_dogru`] = stats.correct || 0;
+                categoryData[`${cat}_yanlis`] = stats.wrong || 0;
+                categoryData[`${cat}_toplam`] = stats.total || 0;
+                categoryData[`${cat}_basari`] = `${accuracy}%`;
+            });
+            
+            // Format recent mistakes as readable text
+            const recentMistakesText = (userData.mistakes || [])
+                .slice(-5) // Son 5 hata
+                .map(m => `${m.scenarioId} (${m.category})`)
+                .join(', ') || 'Yok';
+
             const payload = {
-                userId: userData.userId,
-                timestamp: new Date().toISOString(),
-                createdAt: userData.createdAt,
-                totalPlayTime: Math.floor(userData.totalPlayTime / 60000), // minutes
+                // Tarih ve Zaman (Okunabilir format)
+                tarih: dateStr,
+                saat: timeStr,
+                timestamp: now.toISOString(),
+                
+                // Kullanıcı Bilgileri
+                kullaniciId: userData.userId,
+                kayitTarihi: new Date(userData.createdAt).toLocaleDateString('tr-TR'),
+                toplamOyunSuresi: Math.floor(userData.totalPlayTime / 60000), // dakika
 
-                // Achievements
-                totalScore: userData.achievements.totalScore,
-                scenariosCompleted: userData.achievements.scenariosCompleted,
-                perfectScores: userData.achievements.perfectScores,
-                streakDays: userData.achievements.streakDays,
+                // Başarı İstatistikleri
+                toplamPuan: userData.achievements.totalScore || 0,
+                tamamlananSenaryo: userData.achievements.scenariosCompleted || 0,
+                mukemmelSkor: userData.achievements.perfectScores || 0,
+                seriGun: userData.achievements.streakDays || 0,
 
-                // Statistics
-                totalAttempts: userData.statistics.totalAttempts,
-                correctChoices: userData.statistics.correctChoices,
-                wrongChoices: userData.statistics.wrongChoices,
-                timeouts: userData.statistics.timeouts,
-                averageResponseTime: userData.statistics.averageResponseTime.toFixed(2),
-                accuracyRate: statistics.accuracyRate,
+                // Genel İstatistikler
+                toplamDeneme: userData.statistics.totalAttempts || 0,
+                dogruSecim: userData.statistics.correctChoices || 0,
+                yanlisSecim: userData.statistics.wrongChoices || 0,
+                sureDoldu: userData.statistics.timeouts || 0,
+                ortCevapSuresi: (userData.statistics.averageResponseTime || 0).toFixed(2),
+                basariOrani: `${statistics.accuracyRate || 0}%`,
 
-                // Category Stats
-                categoryStats: JSON.stringify(userData.statistics.categoryStats),
-                categoriesCompleted: JSON.stringify(userData.achievements.categoriesCompleted),
+                // Kategori Başarı Oranları (Ayrı kolonlar)
+                ...categoryData,
 
-                // Recent Mistakes
-                recentMistakes: JSON.stringify(userData.mistakes.slice(-10)),
+                // Son Hatalar
+                sonHatalar: recentMistakesText,
 
-                // Session Info
-                totalSessions: userData.sessions.length,
-                lastPlayDate: userData.achievements.lastPlayDate
+                // Oturum Bilgileri
+                toplamOturum: userData.sessions?.length || 0,
+                sonOynamaTarihi: userData.achievements.lastPlayDate 
+                    ? new Date(userData.achievements.lastPlayDate).toLocaleDateString('tr-TR')
+                    : dateStr
             };
+
+            console.log('📦 Payload hazırlandı:', {
+                kullaniciId: payload.kullaniciId,
+                toplamPuan: payload.toplamPuan,
+                basariOrani: payload.basariOrani
+            });
+            console.log('🌐 URL:', CONFIG.GOOGLE_SHEETS_URL);
 
             const response = await fetch(CONFIG.GOOGLE_SHEETS_URL, {
                 method: 'POST',
@@ -220,12 +273,15 @@ class DataSharingManager {
                 body: JSON.stringify(payload)
             });
 
+            console.log('📡 Fetch tamamlandı (no-cors mode - response okunamaz)');
+            
             // Note: no-cors mode doesn't allow reading response
             // We assume success if no error is thrown
             this.lastSyncTime = new Date().toISOString();
             localStorage.setItem('traffiVidLastSync', this.lastSyncTime);
 
-            console.log('Data sent to Google Sheets successfully');
+            console.log('✅ Data sent to Google Sheets successfully');
+            console.log('🕐 Last sync:', this.lastSyncTime);
             return { success: true };
 
         } catch (error) {
@@ -260,14 +316,20 @@ class UserTracker {
     getOrCreateUserId() {
         let userId = localStorage.getItem('traffiVidUserId');
         if (!userId || !SecurityHelper.validateUserId(userId)) {
-            userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            // Kısa format: u_ + son 6 hane timestamp + 4 karakter random = ~12 karakter
+            const shortTimestamp = Date.now().toString().slice(-6);
+            const shortRandom = Math.random().toString(36).substr(2, 4);
+            userId = 'u_' + shortTimestamp + shortRandom;
             localStorage.setItem('traffiVidUserId', SecurityHelper.sanitizeHTML(userId));
         }
         return SecurityHelper.sanitizeHTML(userId);
     }
 
     generateSessionId() {
-        const sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        // Kısa format: s_ + son 6 hane timestamp + 4 karakter random = ~12 karakter
+        const shortTimestamp = Date.now().toString().slice(-6);
+        const shortRandom = Math.random().toString(36).substr(2, 4);
+        const sessionId = 's_' + shortTimestamp + shortRandom;
         return SecurityHelper.sanitizeHTML(sessionId);
     }
 
@@ -1135,83 +1197,8 @@ const scenarios = [
             }
         ]
     },
-    {
-        id: 'scenario-3',
-        title: 'Park Halindeki Araçlar Arasından Çıkan Yaya',
-        category: 'Yaya Güvenliği',
-        categoryId: 'yaya-guvenlik',
-        difficulty: 'orta',
-        locked: true,
-        thumbnail: 'https://images.unsplash.com/photo-1506521781263-d8422e82f27a?w=600&h=400&fit=crop',
-        videoUrl: '',
-        question: 'Dar bir sokakta park halindeki araçlar arasından aniden bir yaya çıktı. En doğru hareket nedir?',
-        options: [
-            {
-                id: 'a',
-                text: 'A) Frene basarak durmaya çalışmak',
-                correct: true,
-                explanation: 'Doğru tercih! Park halindeki araçların olduğu bölgelerde her zaman yaya çıkabileceği ihtimaline karşı hazırlıklı olmalı ve hızınızı ona göre ayarlamalısınız.'
-            },
-            {
-                id: 'b',
-                text: 'B) Direksiyon kırarak kaçınmaya çalışmak',
-                correct: false,
-                explanation: 'Riskli tercih! Ani direksiyon hareketleri karşı şeride geçmenize veya park halindeki araçlara çarpmanıza neden olabilir.'
-            }
-        ]
-    },
 
     // Kavşak ve Dönüşler
-    {
-        id: 'scenario-4',
-        title: 'Işıksız Kavşakta Öncelik',
-        category: 'Kavşak ve Dönüşler',
-        categoryId: 'kavsak-donusler',
-        difficulty: 'orta',
-        locked: false,
-        thumbnail: 'https://images.unsplash.com/photo-1502877338535-766e1452684a?w=600&h=400&fit=crop',
-        videoUrl: '',
-        question: 'Işıksız bir kavşağa yaklaşıyorsunuz ve sağdan bir araç geliyor. Ne yapmalısınız?',
-        options: [
-            {
-                id: 'a',
-                text: 'A) Sağdan gelen araca yol vermek',
-                correct: true,
-                explanation: 'Doğru tercih! Türkiye\'de sağdan gelen araç önceliklidir. Bu kuralı bilmek ve uygulamak kaza riskini azaltır.'
-            },
-            {
-                id: 'b',
-                text: 'B) Hızlıca geçmeye çalışmak',
-                correct: false,
-                explanation: 'Riskli tercih! Öncelik kuralını ihlal etmek ciddi kazalara yol açabilir. Sağdan gelen araca her zaman yol verilmelidir.'
-            }
-        ]
-    },
-    {
-        id: 'scenario-5',
-        title: 'Sola Dönüşte Karşıdan Gelen Araç',
-        category: 'Kavşak ve Dönüşler',
-        categoryId: 'kavsak-donusler',
-        difficulty: 'orta',
-        locked: true,
-        thumbnail: 'https://images.unsplash.com/photo-1486299267070-83823f5448dd?w=600&h=400&fit=crop',
-        videoUrl: '',
-        question: 'Yeşil ışıkta sola dönmek istiyorsunuz ancak karşıdan düz giden araçlar var. Nasıl hareket etmelisiniz?',
-        options: [
-            {
-                id: 'a',
-                text: 'A) Karşıdan gelen araçların geçmesini beklemek',
-                correct: true,
-                explanation: 'Doğru tercih! Sola dönerken karşıdan düz gelen veya sağa dönen araçlara yol vermek zorundasınız. Bu kural çarpışmaları önler.'
-            },
-            {
-                id: 'b',
-                text: 'B) Hızlıca dönüş yapmak',
-                correct: false,
-                explanation: 'Riskli tercih! Bu hareket karşıdan gelen araçla çarpışmaya neden olabilir ve sizin hatanız sayılır.'
-            }
-        ]
-    },
 
     // Hız ve Fren Mesafesi
     {
@@ -1241,31 +1228,6 @@ const scenarios = [
         ]
     },
     {
-        id: 'scenario-7',
-        title: 'Takip Mesafesi İhlali',
-        category: 'Hız ve Fren Mesafesi',
-        categoryId: 'hiz-fren',
-        difficulty: 'kolay',
-        locked: true,
-        thumbnail: 'https://images.unsplash.com/photo-1511919884226-fd3cad34687c?w=600&h=400&fit=crop',
-        videoUrl: '',
-        question: 'Otobanda 120 km/s hızla giderken önünüzdeki araç ile aranızda 1 araç boyu mesafe var. Ne yapmalısınız?',
-        options: [
-            {
-                id: 'a',
-                text: 'A) Takip mesafesini artırmak için yavaşlamak',
-                correct: true,
-                explanation: 'Doğru tercih! Yüksek hızlarda takip mesafesi çok önemlidir. Güvenli mesafe minimum 2-3 saniye olmalıdır.'
-            },
-            {
-                id: 'b',
-                text: 'B) Mevcut hızda devam etmek',
-                correct: false,
-                explanation: 'Riskli tercih! Yetersiz takip mesafesi önünüzdeki araç fren yaptığında size tepki süresi bırakmaz ve zincirleme kazalara yol açabilir.'
-            }
-        ]
-    },
-    {
         id: 'scenario-8',
         title: 'Yüksek Rüzgar ve Yağmurda Aşırı Hız',
         category: 'Hız ve Fren Mesafesi',
@@ -1291,83 +1253,8 @@ const scenarios = [
             }
         ]
     },
-    {
-        id: 'scenario-25',
-        title: 'Aşırı Hız Virajda',
-        category: 'Hız ve Fren Mesafesi',
-        categoryId: 'hiz-fren',
-        difficulty: 'zor',
-        locked: true,
-        thumbnail: 'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=600&h=400&fit=crop',
-        videoUrl: '',
-        question: 'Dağ yolunda keskin bir viraja hızlı yaklaştığınızı fark ettiniz. En güvenli hareket nedir?',
-        options: [
-            {
-                id: 'a',
-                text: 'A) Virajdan önce yavaşlamak',
-                correct: true,
-                explanation: 'Doğru tercih! Viraj içinde fren yapmak aracın dengesini bozar. Doğru olan virajdan önce hızı düşürmektir.'
-            },
-            {
-                id: 'b',
-                text: 'B) Viraj içinde fren yapmak',
-                correct: false,
-                explanation: 'Riskli tercih! Viraj içinde fren yapmak ağırlık transferi nedeniyle aracın kontrolünü kaybetmenize ve yoldan çıkmanıza neden olabilir.'
-            }
-        ]
-    },
 
     // Kurallar ve Dikkat Dağınıklığı
-    {
-        id: 'scenario-9',
-        title: 'Telefon Kullanımı',
-        category: 'Kurallar ve Dikkat Dağınıklığı',
-        categoryId: 'dikkat-daginiklik',
-        difficulty: 'kolay',
-        locked: false,
-        thumbnail: 'https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=600&h=400&fit=crop',
-        videoUrl: '',
-        question: 'Şehir içinde sürüş yaparken telefonunuz çalıyor. Ne yapmalısınız?',
-        options: [
-            {
-                id: 'a',
-                text: 'A) Güvenli bir yere çekip telefonu açmak',
-                correct: true,
-                explanation: 'Doğru tercih! Sürüş sırasında telefon kullanımı hem yasaktır hem de kazalara neden olur. Güvenli bir yere çekmek en doğru davranıştır.'
-            },
-            {
-                id: 'b',
-                text: 'B) Sürüş yaparken ahizesiz telefonu açmak',
-                correct: false,
-                explanation: 'Riskli tercih! Ahizesiz de olsa telefon konuşması dikkatinizi dağıtır ve kaza riskini artırır.'
-            }
-        ]
-    },
-    {
-        id: 'scenario-10',
-        title: 'Yorgun Sürücü',
-        category: 'Kurallar ve Dikkat Dağınıklığı',
-        categoryId: 'dikkat-daginiklik',
-        difficulty: 'orta',
-        locked: true,
-        thumbnail: 'https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?w=600&h=400&fit=crop',
-        videoUrl: '',
-        question: 'Uzun bir yolculuk sırasında uykulu hissetmeye başladınız. En güvenli hareket nedir?',
-        options: [
-            {
-                id: 'a',
-                text: 'A) Dinlenmek için bir molaya çekmek',
-                correct: true,
-                explanation: 'Doğru tercih! Yorgunluk kazaların en önemli nedenlerinden biridir. Düzenli molalar vermek hayat kurtarır.'
-            },
-            {
-                id: 'b',
-                text: 'B) Müzik açarak uyanık kalmaya çalışmak',
-                correct: false,
-                explanation: 'Riskli tercih! Müzik veya enerji içeceği gibi çözümler geçicidir. Yorgunluğun tek çözümü dinlenmektir.'
-            }
-        ]
-    },
     {
         id: 'scenario-26',
         title: 'Yeşil Işık Yanarken Geçiş',
@@ -1396,356 +1283,7 @@ const scenarios = [
     },
 
     // Gece Sürüşü
-    {
-        id: 'scenario-11',
-        title: 'Karşıdan Gelen Araç Farları',
-        category: 'Gece Sürüşü',
-        categoryId: 'gece-surus',
-        difficulty: 'kolay',
-        locked: false,
-        thumbnail: 'https://images.unsplash.com/photo-1519003300449-424ad0405076?w=600&h=400&fit=crop',
-        videoUrl: '',
-        question: 'Gece sürüşü sırasında karşıdan gelen araç uzun farla gelmeye devam ediyor ve gözleriniz kamaşıyor. Ne yapmalısınız?',
-        options: [
-            {
-                id: 'a',
-                text: 'A) Yol kenarındaki beyaz çizgiyi takip ederek dikkatli ilerlemek',
-                correct: true,
-                explanation: 'Doğru tercih! Kamaşma durumunda yol kenarı çizgisini referans almak ve gerekirse yavaşlamak güvenli sürüşün anahtarıdır.'
-            },
-            {
-                id: 'b',
-                text: 'B) Karşılık vermek için kendi farlarınızı uzun yakmak',
-                correct: false,
-                explanation: 'Riskli tercih! Karşılık vermek her iki sürücünün de görüşünü bozar ve kaza riskini artırır. Asla uzun far ile karşılık verilmemelidir.'
-            }
-        ]
-    },
-    {
-        id: 'scenario-12',
-        title: 'Yaban Hayvanı Riski',
-        category: 'Gece Sürüşü',
-        categoryId: 'gece-surus',
-        difficulty: 'zor',
-        locked: true,
-        thumbnail: 'https://images.unsplash.com/photo-1473448912268-2022ce9509d8?w=600&h=400&fit=crop',
-        videoUrl: '',
-        question: 'Gece kırsalda sürüş yaparken bir geyik yola atladı. En güvenli hareket nedir?',
-        options: [
-            {
-                id: 'a',
-                text: 'A) Düz fren yapıp şeritte kalmaya çalışmak',
-                correct: true,
-                explanation: 'Doğru tercih! Hayvan çarpması ciddi olsa da şeritten çıkmak veya karşı şeride geçmek çok daha tehlikelidir. Düz fren en güvenli seçenektir.'
-            },
-            {
-                id: 'b',
-                text: 'B) Ani direksiyon ile kaçınmaya çalışmak',
-                correct: false,
-                explanation: 'Riskli tercih! Ani manevra yoldan çıkmanıza veya karşı şeritten gelen araçla çarpışmanıza neden olabilir.'
-            }
-        ]
-    },
-    {
-        id: 'scenario-13',
-        title: 'Çocuk Güvenliği',
-        category: 'Yaya Güvenliği',
-        categoryId: 'yaya-guvenlik',
-        difficulty: 'orta',
-        locked: true,
-        thumbnail: 'https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=600&h=400&fit=crop',
-        videoUrl: '',
-        question: 'Okul çıkışı saatinde okul önünden geçiyorsunuz. Kaldırımda birçok çocuk var. Ne yapmalısınız?',
-        options: [
-            {
-                id: 'a',
-                text: 'A) Hızı azaltıp her an durmaya hazır olmak',
-                correct: true,
-                explanation: 'Doğru tercih! Çocuklar öngörülemez davranışlar sergileyebilir. Okul bölgelerinde ekstra dikkatli olmak ve hızı düşürmek şarttır.'
-            },
-            {
-                id: 'b',
-                text: 'B) Normal hızda devam etmek',
-                correct: false,
-                explanation: 'Riskli tercih! Çocukların ani hareketlerine karşı tepki süreniz yetersiz kalabilir.'
-            }
-        ]
-    },
-    {
-        id: 'scenario-14',
-        title: 'Yaşlı Yaya Geçişi',
-        category: 'Yaya Güvenliği',
-        categoryId: 'yaya-guvenlik',
-        difficulty: 'kolay',
-        locked: true,
-        thumbnail: 'https://images.unsplash.com/photo-1581092918056-0c4c3acd3789?w=600&h=400&fit=crop',
-        videoUrl: '',
-        question: 'Yaşlı bir yaya yaya geçidinde yavaş yavaş karşıya geçiyor. Ne yapmalısınız?',
-        options: [
-            {
-                id: 'a',
-                text: 'A) Sabırla beklemek ve acele ettirmemek',
-                correct: true,
-                explanation: 'Doğru tercih! Yaşlı yayalar daha yavaş hareket eder. Onları acele ettirmek veya stres yaratmak tehlikelidir.'
-            },
-            {
-                id: 'b',
-                text: 'B) Korna çalarak acele etmesini sağlamak',
-                correct: false,
-                explanation: 'Riskli tercih! Korna çalmak yaşlı yayayı korkutabilir ve düşmesine neden olabilir.'
-            }
-        ]
-    },
-    {
-        id: 'scenario-15',
-        title: 'Dönel Kavşak Girişi',
-        category: 'Kavşak ve Dönüşler',
-        categoryId: 'kavsak-donusler',
-        difficulty: 'orta',
-        locked: true,
-        thumbnail: 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?w=600&h=400&fit=crop',
-        videoUrl: '',
-        question: 'Dönel kavşağa girmek istiyorsunuz. Sağdan araç yaklaşıyor. Ne yapmalısınız?',
-        options: [
-            {
-                id: 'a',
-                text: 'A) Dönel kavşaktaki araca yol vermek',
-                correct: true,
-                explanation: 'Doğru tercih! Dönel kavşaklarda içerideki araçlar önceliklidir. Girmeden önce mutlaka yol vermelisiniz.'
-            },
-            {
-                id: 'b',
-                text: 'B) Hızla kavşağa girmek',
-                correct: false,
-                explanation: 'Riskli tercih! Öncelik kuralını ihlal etmek ciddi çarpışmalara yol açar.'
-            }
-        ]
-    },
-    {
-        id: 'scenario-16',
-        title: 'U Dönüşü Yapma',
-        category: 'Kavşak ve Dönüşler',
-        categoryId: 'kavsak-donusler',
-        difficulty: 'zor',
-        locked: true,
-        thumbnail: 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=600&h=400&fit=crop',
-        videoUrl: '',
-        question: 'Yoğun trafikte U dönüşü yapmak istiyorsunuz. En güvenli yöntem nedir?',
-        options: [
-            {
-                id: 'a',
-                text: 'A) Her iki yönden de yol açık olduğunda dönüş yapmak',
-                correct: true,
-                explanation: 'Doğru tercih! U dönüşü riskli bir manevrадыr. Tüm yönlerden gelen trafiği kontrol etmek şarttır.'
-            },
-            {
-                id: 'b',
-                text: 'B) Sadece kendi şeridinizdeki trafiği kontrol etmek',
-                correct: false,
-                explanation: 'Riskli tercih! Karşı şeritten gelen araçları görmezden gelmek ciddi kazalara neden olur.'
-            }
-        ]
-    },
-    {
-        id: 'scenario-17',
-        title: 'Buzlu Yolda Fren',
-        category: 'Hız ve Fren Mesafesi',
-        categoryId: 'hiz-fren',
-        difficulty: 'zor',
-        locked: true,
-        thumbnail: 'https://images.unsplash.com/photo-1547036967-23d11aacaee0?w=600&h=400&fit=crop',
-        videoUrl: '',
-        question: 'Buzlu yolda sürüş yaparken önünüzdeki araç durdu. Nasıl fren yapmalısınız?',
-        options: [
-            {
-                id: 'a',
-                text: 'A) Kısa kısa fren yaparak (pompalama tekniği)',
-                correct: true,
-                explanation: 'Doğru tercih! Buzlu yolda pompalama tekniği tekerleklerin kilitlenmesini önler ve kontrolü sürdürmenizi sağlar.'
-            },
-            {
-                id: 'b',
-                text: 'B) Ani ve sert fren yaparak',
-                correct: false,
-                explanation: 'Riskli tercih! Ani fren buzlu yolda tekerlekleri kilitler ve kontrolü tamamen kaybedersiniz.'
-            }
-        ]
-    },
-    {
-        id: 'scenario-18',
-        title: 'Hız Limitinin Üzerinde',
-        category: 'Hız ve Fren Mesafesi',
-        categoryId: 'hiz-fren',
-        difficulty: 'kolay',
-        locked: true,
-        thumbnail: 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=600&h=400&fit=crop',
-        videoUrl: '',
-        question: 'Otobanda hız limiti 120 km/s. Arkadan gelen araç farla sinyal veriyor. Ne yapmalısınız?',
-        options: [
-            {
-                id: 'a',
-                text: 'A) Güvenli bir şekilde sağ şeride geçmek',
-                correct: true,
-                explanation: 'Doğru tercih! Sol şerit sollama şerididir. Sollama yapmıyorsanız sağ şeride geçmelisiniz.'
-            },
-            {
-                id: 'b',
-                text: 'B) Hızınızı daha da düşürerek öğüt vermek',
-                correct: false,
-                explanation: 'Riskli tercih! Bu davranış trafik akışını bozar ve saldırgan sürücü davranışlarını tetikler.'
-            }
-        ]
-    },
-    {
-        id: 'scenario-19',
-        title: 'Yemek Yerken Sürüş',
-        category: 'Kurallar ve Dikkat Dağınıklığı',
-        categoryId: 'dikkat-daginiklik',
-        difficulty: 'kolay',
-        locked: true,
-        thumbnail: 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?w=600&h=400&fit=crop',
-        videoUrl: '',
-        question: 'Acele bir toplantıya giderken arabada kahvaltı yapmaya karar verdiniz. Doğru olan nedir?',
-        options: [
-            {
-                id: 'a',
-                text: 'A) Güvenli bir yere çekip yemek yemek',
-                correct: true,
-                explanation: 'Doğru tercih! Sürüş sırasında yemek yemek dikkatinizi önemli ölçüde dağıtır ve kaza riskini artırır.'
-            },
-            {
-                id: 'b',
-                text: 'B) Düz yolda dikkatli bir şekilde yemek',
-                correct: false,
-                explanation: 'Riskli tercih! Düz yol bile olsa elleriniz direksiyonda değildir ve dikkatiniz bölünmüştür.'
-            }
-        ]
-    },
-    {
-        id: 'scenario-20',
-        title: 'Navigasyon Ayarı',
-        category: 'Kurallar ve Dikkat Dağınıklığı',
-        categoryId: 'dikkat-daginiklik',
-        difficulty: 'orta',
-        locked: true,
-        thumbnail: 'https://images.unsplash.com/photo-1483664852095-d6cc6870702d?w=600&h=400&fit=crop',
-        videoUrl: '',
-        question: 'Sürüş sırasında navigasyon cihazınızın ayarını değiştirmeniz gerekiyor. Ne yapmalısınız?',
-        options: [
-            {
-                id: 'a',
-                text: 'A) Güvenli bir yere çekip ayarları değiştirmek',
-                correct: true,
-                explanation: 'Doğru tercih! Navigasyon ile uğraşmak gözlerinizin yoldan kaymasına neden olur. Durmak en güvenli seçenektir.'
-            },
-            {
-                id: 'b',
-                text: 'B) Kırmızı ışıkta beklerken ayarlamak',
-                correct: false,
-                explanation: 'Riskli tercih! Işık değiştiğinde hazır olmayabilirsiniz ve arkadan gelebilecek çarpmalara karşı savunmasız kalırsınız.'
-            }
-        ]
-    },
-    {
-        id: 'scenario-21',
-        title: 'Sis Lambası Kullanımı',
-        category: 'Gece Sürüşü',
-        categoryId: 'gece-surus',
-        difficulty: 'orta',
-        locked: true,
-        thumbnail: 'https://images.unsplash.com/photo-1490730141103-6cac27aaab94?w=600&h=400&fit=crop',
-        videoUrl: '',
-        question: 'Yoğun siste sürüş yapıyorsunuz. Hangi farları kullanmalısınız?',
-        options: [
-            {
-                id: 'a',
-                text: 'A) Sis farları ve kısa farları',
-                correct: true,
-                explanation: 'Doğru tercih! Uzun farlar siste yansıma yapar ve görüşü daha da kötüleştirir. Sis farları ve kısa farlar en iyisidir.'
-            },
-            {
-                id: 'b',
-                text: 'B) Uzun farları',
-                correct: false,
-                explanation: 'Riskli tercih! Uzun farlar siste parlak bir perde oluşturur ve hiçbir şey görmezsiniz.'
-            }
-        ]
-    },
-    {
-        id: 'scenario-22',
-        title: 'Kırsal Alanda Gece Sürüşü',
-        category: 'Gece Sürüşü',
-        categoryId: 'gece-surus',
-        difficulty: 'orta',
-        locked: true,
-        thumbnail: 'https://images.unsplash.com/photo-1505228395891-9a51e7e86bf6?w=600&h=400&fit=crop',
-        videoUrl: '',
-        question: 'Aydınlatması olmayan kırsal yolda gece sürüşü yapıyorsunuz. Hızınız ne olmalı?',
-        options: [
-            {
-                id: 'a',
-                text: 'A) Farların aydınlattığı mesafede durabilecek hızda',
-                correct: true,
-                explanation: 'Doğru tercih! Gece görüş mesafeniz sınırlıdır. Farlarınızın aydınlattığı mesafede durabilecek hızda gitmelisiniz.'
-            },
-            {
-                id: 'b',
-                text: 'B) Gündüz gittiğiniz hızda',
-                correct: false,
-                explanation: 'Riskli tercih! Gece görüş mesafeniz çok daha kısadır. Gündüz hızıyla gitmek tehlike algılama sürenizi azaltır.'
-            }
-        ]
-    },
-    {
-        id: 'scenario-23',
-        title: 'Bisikletli ile Yan Yana',
-        category: 'Yaya Güvenliği',
-        categoryId: 'yaya-guvenlik',
-        difficulty: 'orta',
-        locked: true,
-        thumbnail: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&h=400&fit=crop',
-        videoUrl: '',
-        question: 'Dar bir yolda önünüzde bisiklet sürücüsü var. Nasıl sollama yapmalısınız?',
-        options: [
-            {
-                id: 'a',
-                text: 'A) En az 1.5 metre mesafe bırakarak güvenli sollama yapmak',
-                correct: true,
-                explanation: 'Doğru tercih! Bisikletliler savunmasızdır. Güvenli mesafe bırakmak ve yavaş sollama yapmak şarttır.'
-            },
-            {
-                id: 'b',
-                text: 'B) Yan tarafından hızlıca geçmek',
-                correct: false,
-                explanation: 'Riskli tercih! Hızlı geçiş bisikletliyi dengesini kaybettirebilir veya çarpabilirsiniz.'
-            }
-        ]
-    },
-    {
-        id: 'scenario-24',
-        title: 'Yeşil Işıkta Yaya',
-        category: 'Kavşak ve Dönüşler',
-        categoryId: 'kavsak-donusler',
-        difficulty: 'kolay',
-        locked: true,
-        thumbnail: 'https://images.unsplash.com/photo-1573804633927-bfcbcd909acd?w=600&h=400&fit=crop',
-        videoUrl: '',
-        question: 'Yeşil ışıkta sağa dönüyorsunuz ama yaya geçidinde yayalar var. Ne yapmalısınız?',
-        options: [
-            {
-                id: 'a',
-                text: 'A) Yayaların geçmesini beklemek',
-                correct: true,
-                explanation: 'Doğru tercih! Yeşil ışığınız olsa bile yaya geçidindeki yayalara yol vermek zorundasınız.'
-            },
-            {
-                id: 'b',
-                text: 'B) Yavaşça arayı bulup geçmek',
-                correct: false,
-                explanation: 'Riskli tercih! Yayaların güvenliği her zaman önceliktir. Geçişlerini tamamlamalarını beklemelisiniz.'
-            }
-        ]
-    }
+
 ];
 
 // ===== STATE MANAGEMENT =====
@@ -2047,22 +1585,33 @@ function startScenarioSequence() {
 
                 // When all videos are loaded
                 if (loadedVideos === totalVideos) {
-                    videoLoading.classList.remove('active');
-
                     // Store preloaded videos for later use
                     currentScenario.preloadedVideos = videoElements;
 
-                    // Set main video and play
+                    // Set main video source
                     video.src = currentScenario.videoUrl;
                     video.load();
-                    video.play();
+                    
+                    // Wait for video to actually start playing before hiding loading screen
+                    video.onplaying = () => {
+                        videoLoading.classList.remove('active');
+                        video.onplaying = null; // Remove listener after first use
+                    };
+                    
+                    // Start playing
+                    video.play().catch(err => {
+                        console.error('Video play error:', err);
+                        // If autoplay fails, hide loading and show question immediately
+                        videoLoading.classList.remove('active');
+                        showQuestion();
+                    });
                 }
             }, { once: true });
 
             preloadVideo.load();
         });
 
-        // When video ends, show question
+        // When video ends, show question and start timer
         video.onended = () => {
             showQuestion();
         };
@@ -2075,6 +1624,12 @@ function startScenarioSequence() {
 }
 
 function showQuestion() {
+    // Pause video to ensure it's not playing during question
+    const video = document.getElementById('scenarioVideo');
+    if (video) {
+        video.pause();
+    }
+    
     document.getElementById('questionOverlay').classList.add('active');
 
     // Get translation if available
@@ -2095,8 +1650,11 @@ function showQuestion() {
         optionsContainer.appendChild(btn);
     });
 
-    // Start timer
-    startTimer();
+    // Start timer only after question is fully displayed
+    // Add a small delay to ensure everything is rendered
+    setTimeout(() => {
+        startTimer();
+    }, 100);
 }
 
 function startTimer() {
